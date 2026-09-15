@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'services/auth_api.dart';
 import 'services/session_store.dart';
@@ -8,7 +10,15 @@ import 'screens/splash_screen.dart';
 import 'screens/app_shell.dart';
 import 'ui/design.dart';
 
-void main() => runApp(const FacePaymentApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // This project currently has an Android Firebase configuration. Desktop and
+  // web remain available for local UI tests without a Firebase configuration.
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    await Firebase.initializeApp();
+  }
+  runApp(const FacePaymentApp());
+}
 
 class FacePaymentApp extends StatefulWidget {
   const FacePaymentApp({super.key, this.authService, this.sessionStore});
@@ -23,7 +33,11 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
   bool _splash = true, _busy = true;
   String? _error;
   Future<void> Function()? _retry;
-  late final AuthService _auth = widget.authService ?? HttpAuthService();
+  late final AuthService _auth =
+      widget.authService ??
+      (FirebasePhoneAuthService.isSupported
+          ? FirebasePhoneAuthService()
+          : HttpAuthService());
   late final SessionStore _store = widget.sessionStore ?? SecureSessionStore();
   final _navigatorKey = GlobalKey<NavigatorState>();
   AuthSession? _session;

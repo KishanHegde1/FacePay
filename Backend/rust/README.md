@@ -25,6 +25,7 @@ Render provides `PORT`; when `BIND_ADDR` is not set, the backend binds to `0.0.0
 - `DATABASE_URL`: Neon pooled PostgreSQL URL with `sslmode=require` or stronger (secret)
 - `EXPECTED_DATABASE_NAME=neondb`
 - `FRONTEND_ORIGINS=https://YOUR-FRONTEND-DOMAIN` once the web frontend is deployed. Each value must be an exact HTTPS origin; multiple origins are comma-separated.
+- `FIREBASE_WEB_API_KEY`: Firebase project's Web API key. The backend uses it only to ask Firebase to validate an ID token; keep it in Render environment settings, never in a Flutter `.env`.
 
 Do not add `BIND_ADDR`, `PORT`, `AUTH_TEST_PHONE`, or `AUTH_TEST_OTP` on Render. The `/health` endpoint is available for Render health checks after database startup succeeds.
 
@@ -63,13 +64,14 @@ Session rows persist across backend restarts; raw bearer tokens are not stored i
 ## API
 
 - `POST /auth/request-otp` — `{ "phone": "+917349083847" }`
-- `POST /auth/verify-otp` — `{ "challenge_id": "...", "otp": "000000" }`
+- `POST /auth/verify-otp` — `{ "challenge_id": "...", "otp": "000000" }` for local development only
+- `POST /auth/firebase` — `{ "id_token": "..." }` after Firebase Phone Authentication; Firebase validates the ID token and the API creates a FacePay session
 - `GET /auth/me` — restore account with Bearer token
 - `GET /profile` — read own profile
 - `PATCH /profile` — `{ "name": "Your name", "email": "you@example.com" }`; blank/null email clears it
 - `POST /auth/logout` — revoke Bearer token
 
-No real SMS provider or Firebase authentication has been integrated. The debug Android signing fingerprints for future Firebase setup are:
+Firebase Phone Authentication is used by Android when the Firebase app enables Phone sign-in and has the required signing fingerprints. The debug Android signing fingerprints are:
 
 - Package: `com.example.face_payment`
 - SHA-1: `4E:B6:A0:E7:76:FB:59:40:33:37:82:29:95:95:32:E3:74:F9:68:36`

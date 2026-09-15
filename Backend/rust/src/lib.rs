@@ -41,6 +41,7 @@ pub struct Config {
     // These fields are deliberately excluded from Debug/Serialize and error text.
     database_url: String,
     expected_database_name: String,
+    firebase_web_api_key: Option<String>,
 }
 
 impl Config {
@@ -58,6 +59,9 @@ impl Config {
             .ok_or(
                 "EXPECTED_DATABASE_NAME is required and must match the database selected in Neon.",
             )?;
+        let firebase_web_api_key = lookup("FIREBASE_WEB_API_KEY")
+            .map(|value| value.trim().to_owned())
+            .filter(|value| !value.is_empty());
         database::connection_options(&database_url)?;
         let app_env = lookup("APP_ENV").unwrap_or_else(|| "production".into());
         if !matches!(app_env.as_str(), "development" | "test" | "production") {
@@ -153,6 +157,7 @@ impl Config {
             test_credentials,
             database_url,
             expected_database_name,
+            firebase_web_api_key,
         })
     }
 }
@@ -320,6 +325,23 @@ struct VerifyRequest {
     otp: String,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FirebaseTokenRequest {
+    id_token: String,
+}
+
+#[derive(Deserialize)]
+struct FirebaseLookup {
+    users: Vec<FirebaseUser>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FirebaseUser {
+    phone_number: Option<String>,
+}
+
 #[derive(Serialize)]
 struct ChallengeResponse {
     challenge_id: String,
@@ -409,6 +431,20 @@ impl ApiError {
     fn unavailable() -> Self {
         Self::new(StatusCode::SERVICE_UNAVAILABLE, "auth_unavailable", "SMS sign-in is not configured. Only an explicitly enabled development test number can sign in.")
     }
+    fn firebase_unavailable() -> Self {
+        Self::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "firebase_unavailable",
+            "Phone sign-in is being set up. Please try again shortly.",
+        )
+    }
+    fn firebase_invalid() -> Self {
+        Self::new(
+            StatusCode::UNAUTHORIZED,
+            "firebase_verification_failed",
+            "We could not verify this phone sign-in. Please request a new code.",
+        )
+    }
     fn unauthorized() -> Self {
         Self::new(
             StatusCode::UNAUTHORIZED,
@@ -486,6 +522,7 @@ fn router(config: Config, pool: PgPool) -> Router {
         .route("/health", get(health))
         .route("/auth/request-otp", post(request_otp))
         .route("/auth/verify-otp", post(verify_otp))
+        .route("/auth/firebase", post(verify_firebase))
         .route("/auth/me", get(me))
         .route("/auth/logout", post(logout))
         .route("/profile", get(get_profile).patch(patch_profile))
@@ -563,6 +600,52 @@ async fn verify_otp(
         .lock()
         .map_err(|_| ApiError::unavailable())?
         .verify(input, credentials, Instant::now())?;
+    let access_token = opaque_id()?;
+    let profile = database::sign_in(&state.pool, &phone, &access_token).await?;
+    Ok(Json(TokenResponse {
+        access_token,
+        token_type: "Bearer",
+        expires_in: None,
+        user: profile.into(),
+    }))
+}
+
+async fn verify_firebase(
+    State(state): State<AppState>,
+    input: Result<Json<FirebaseTokenRequest>, JsonRejection>,
+) -> Result<Json<TokenResponse>, ApiError> {
+    let Json(input) = input.map_err(ApiError::invalid_request)?;
+    if input.id_token.len() > 16_384 || input.id_token.trim().is_empty() {
+        return Err(ApiError::firebase_invalid());
+    }
+    let api_key = state
+        .config
+        .firebase_web_api_key
+        .as_deref()
+        .ok_or_else(ApiError::firebase_unavailable)?;
+    // Firebase validates the ID token over HTTPS and returns only the account
+    // associated with that token for this Firebase project's API key.
+    let response = reqwest::Client::new()
+        .post("https://identitytoolkit.googleapis.com/v1/accounts:lookup")
+        .query(&[("key", api_key)])
+        .json(&serde_json::json!({ "idToken": input.id_token }))
+        .send()
+        .await
+        .map_err(|_| ApiError::firebase_unavailable())?;
+    if !response.status().is_success() {
+        return Err(ApiError::firebase_invalid());
+    }
+    let lookup: FirebaseLookup = response
+        .json()
+        .await
+        .map_err(|_| ApiError::firebase_unavailable())?;
+    let phone = lookup
+        .users
+        .into_iter()
+        .next()
+        .and_then(|user| user.phone_number)
+        .and_then(|phone| normalize_phone(&phone))
+        .ok_or_else(ApiError::firebase_invalid)?;
     let access_token = opaque_id()?;
     let profile = database::sign_in(&state.pool, &phone, &access_token).await?;
     Ok(Json(TokenResponse {

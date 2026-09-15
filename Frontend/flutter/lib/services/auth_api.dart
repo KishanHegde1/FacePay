@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class OtpChallenge {
@@ -187,6 +189,19 @@ class HttpAuthService implements AuthService {
       '/auth/verify-otp',
       body: {'challenge_id': challengeId, 'otp': otp},
     );
+    return _sessionFromJson(json);
+  }
+
+  Future<AuthSession> verifyFirebaseIdToken(String idToken) async {
+    final json = await _request(
+      'POST',
+      '/auth/firebase',
+      body: {'id_token': idToken},
+    );
+    return _sessionFromJson(json);
+  }
+
+  AuthSession _sessionFromJson(Map<String, dynamic> json) {
     if (json['access_token'] is! String ||
         (json['access_token'] as String).trim().isEmpty ||
         json['token_type'] != 'Bearer' ||
@@ -275,4 +290,141 @@ class HttpAuthService implements AuthService {
 
   @override
   void dispose() => _client.close();
+}
+
+/// Uses Firebase only to prove control of the phone number. The Firebase ID
+/// token is then exchanged for FacePay's existing opaque backend session.
+class FirebasePhoneAuthService implements AuthService {
+  FirebasePhoneAuthService({FirebaseAuth? firebaseAuth, HttpAuthService? api})
+    : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+      _api = api ?? HttpAuthService();
+
+  static bool get isSupported =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  final FirebaseAuth _firebaseAuth;
+  final HttpAuthService _api;
+
+  @override
+  Future<OtpChallenge> requestOtp(String phone) {
+    if (!isSupported) {
+      return Future.error(
+        const AuthFailure(
+          'Phone verification is available on the FacePay Android app.',
+          code: 'unsupported_platform',
+        ),
+      );
+    }
+    final result = Completer<OtpChallenge>();
+    unawaited(
+      _firebaseAuth
+          .verifyPhoneNumber(
+            phoneNumber: phone,
+            timeout: const Duration(seconds: 60),
+            // Android may detect an incoming code automatically. We leave the
+            // account unsigned-in here so the app always exchanges a verified
+            // Firebase ID token with the FacePay backend in one place.
+            verificationCompleted: (_) {},
+            verificationFailed: (error) {
+              if (!result.isCompleted) result.completeError(_failure(error));
+            },
+            codeSent: (verificationId, _) {
+              if (!result.isCompleted) {
+                result.complete(
+                  OtpChallenge(
+                    id: verificationId,
+                    expiresIn: 300,
+                    retryAfter: 30,
+                    developmentTest: false,
+                  ),
+                );
+              }
+            },
+            codeAutoRetrievalTimeout: (_) {},
+          )
+          .catchError((Object error) {
+            if (!result.isCompleted) {
+              result.completeError(
+                error is FirebaseAuthException
+                    ? _failure(error)
+                    : const AuthFailure(
+                        'We could not start phone verification. Please try again.',
+                        code: 'verification_unavailable',
+                      ),
+              );
+            }
+          }),
+    );
+    return result.future.timeout(
+      const Duration(seconds: 75),
+      onTimeout: () => throw const AuthFailure(
+        'We could not send a verification code. Please try again.',
+        code: 'verification_timeout',
+      ),
+    );
+  }
+
+  AuthFailure _failure(FirebaseAuthException error) {
+    final code = switch (error.code) {
+      'invalid-phone-number' => 'invalid_phone',
+      'too-many-requests' || 'quota-exceeded' => 'rate_limited',
+      'session-expired' => 'challenge_expired',
+      _ => 'verification_failed',
+    };
+    final message = switch (code) {
+      'invalid_phone' => 'Enter a valid mobile number.',
+      'rate_limited' => 'Too many attempts. Please wait and try again.',
+      'challenge_expired' => 'This code has expired. Request a new one.',
+      _ => 'We could not verify this number. Please try again.',
+    };
+    return AuthFailure(message, code: code);
+  }
+
+  @override
+  Future<AuthSession> verifyOtp(String challengeId, String otp) async {
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: challengeId,
+        smsCode: otp,
+      );
+      final signedIn = await _firebaseAuth.signInWithCredential(credential);
+      final token = await signedIn.user?.getIdToken(true);
+      if (token == null || token.isEmpty) {
+        throw const AuthFailure(
+          'We could not confirm your phone verification. Please try again.',
+          code: 'firebase_token_missing',
+        );
+      }
+      return _api.verifyFirebaseIdToken(token);
+    } on FirebaseAuthException catch (error) {
+      throw _failure(error);
+    }
+  }
+
+  @override
+  Future<AuthSession> getCurrentUser(String accessToken) =>
+      _api.getCurrentUser(accessToken);
+
+  @override
+  Future<ProfileData> getProfile(String accessToken) =>
+      _api.getProfile(accessToken);
+
+  @override
+  Future<ProfileData> saveProfile(
+    String accessToken,
+    String name,
+    String email,
+  ) => _api.saveProfile(accessToken, name, email);
+
+  @override
+  Future<void> logout(String accessToken) async {
+    try {
+      await _api.logout(accessToken);
+    } finally {
+      await _firebaseAuth.signOut();
+    }
+  }
+
+  @override
+  void dispose() => _api.dispose();
 }

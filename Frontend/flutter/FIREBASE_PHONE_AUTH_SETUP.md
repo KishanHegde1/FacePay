@@ -10,7 +10,8 @@ provider; do not enable it with a demo or hard-coded OTP.
 1. In the Firebase console, create or select the FacePay Firebase project.
 2. Add an Android app using this exact package name: `com.example.face_payment`.
 3. Download the generated `google-services.json` and put it at
-   `android/app/google-services.json` in this Flutter project.
+   `android/app/google-services.json` in this Flutter project. This project's
+   validated file is already in that location.
 4. In **Authentication → Sign-in method**, enable **Phone**.
 5. Add the debug SHA-1 and SHA-256 fingerprints to the Android app settings.
    Run this on the development computer to display them:
@@ -29,9 +30,12 @@ provider; do not enable it with a demo or hard-coded OTP.
 credential. The Rust API must verify the Firebase ID token and then issue its
 existing FacePay session token before profile and Neon requests can be trusted.
 
-Provide the Firebase project ID to configure Render. Keep any Firebase
-Admin service-account JSON private and store it only in Render's encrypted
-environment settings, never in this Flutter project or GitHub. Once the Android
-file and Firebase project ID are present, the next code update will add
-`firebase_core`, `firebase_auth`, Android's Google Services Gradle plugin, and
-the Rust token-verification endpoint.
+The app now includes `firebase_core`, `firebase_auth`, and Android's Google
+Services Gradle plugin. The Rust endpoint sends each Firebase ID token over
+HTTPS to Firebase's account lookup API, then creates the existing FacePay
+session only when Firebase confirms the associated Indian mobile number.
+
+In Render, add `FIREBASE_WEB_API_KEY` using the Web API key from this Firebase
+project. Keep it in Render environment settings, never in Flutter `.env`
+files. The Flutter project does not need and must not contain an Admin
+service-account JSON file.
