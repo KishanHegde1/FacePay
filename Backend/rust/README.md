@@ -58,6 +58,7 @@ The profile screen contains name, verified read-only mobile number, and optional
 | --- | --- |
 | `facepay.profiles` | `id`, `name`, `mobile_no` (unique), `email`, `created_at`, `updated_at` |
 | `facepay.auth_sessions` | `token_hash` (SHA-256), `profile_id`, `created_at` |
+| `facepay.face_enrollments` | `profile_id`, hashed app-installation binding, liveness method, timestamps; no raw face data |
 
 Session rows persist across backend restarts; raw bearer tokens are not stored in Neon. They remain valid until revoked. Uninstall clears the device token; it cannot notify the server to delete its old session row.
 
@@ -69,6 +70,8 @@ Session rows persist across backend restarts; raw bearer tokens are not stored i
 - `GET /auth/me` — restore account with Bearer token
 - `GET /profile` — read own profile
 - `PATCH /profile` — `{ "name": "Your name", "email": "you@example.com" }`; blank/null email clears it
+- `GET /face-enrollment` — read whether the signed-in account has a saved device-bound enrollment
+- `POST /face-enrollment` — saves a completed two-blink enrollment against the current app installation
 - `POST /auth/logout` — revoke Bearer token
 
 Firebase Phone Authentication is used by Android when the Firebase app enables Phone sign-in and has the required signing fingerprints. The debug Android signing fingerprints are:

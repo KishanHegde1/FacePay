@@ -332,6 +332,18 @@ struct FirebaseTokenRequest {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FaceEnrollmentRequest {
+    device_id: String,
+    liveness_method: String,
+}
+
+#[derive(Serialize)]
+struct FaceEnrollmentResponse {
+    enrolled: bool,
+}
+
+#[derive(Deserialize)]
 struct FirebaseLookup {
     users: Vec<FirebaseUser>,
 }
@@ -526,6 +538,10 @@ fn router(config: Config, pool: PgPool) -> Router {
         .route("/auth/me", get(me))
         .route("/auth/logout", post(logout))
         .route("/profile", get(get_profile).patch(patch_profile))
+        .route(
+            "/face-enrollment",
+            get(get_face_enrollment).post(register_face_enrollment),
+        )
         .fallback(|| async {
             ApiError::new(
                 StatusCode::NOT_FOUND,
@@ -702,6 +718,42 @@ async fn patch_profile(
     let patch = patch.validate()?;
     let profile = database::update_profile(&state.pool, token, patch).await?;
     Ok(Json(ProfileResponse { profile }))
+}
+
+async fn get_face_enrollment(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<FaceEnrollmentResponse>, ApiError> {
+    let enrolled = database::face_enrolled(&state.pool, bearer_token(&headers)?).await?;
+    Ok(Json(FaceEnrollmentResponse { enrolled }))
+}
+
+async fn register_face_enrollment(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    input: Result<Json<FaceEnrollmentRequest>, JsonRejection>,
+) -> Result<Json<FaceEnrollmentResponse>, ApiError> {
+    let token = bearer_token(&headers)?;
+    let Json(input) = input.map_err(ApiError::invalid_request)?;
+    if input.liveness_method != "two_blink_v1"
+        || input.device_id.len() != 64
+        || !input.device_id.bytes().all(|byte| byte.is_ascii_hexdigit())
+    {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "invalid_face_enrollment",
+            "Face setup could not be verified. Complete the blink check again.",
+        ));
+    }
+    let device_id_hash = Sha256::digest(input.device_id.as_bytes());
+    database::register_face_enrollment(
+        &state.pool,
+        token,
+        device_id_hash.as_slice(),
+        &input.liveness_method,
+    )
+    .await?;
+    Ok(Json(FaceEnrollmentResponse { enrolled: true }))
 }
 
 #[cfg(test)]

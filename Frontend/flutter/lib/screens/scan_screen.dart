@@ -8,12 +8,16 @@ import '../ui/design.dart';
 import 'scan_result_screen.dart';
 
 class ScanScreen extends StatefulWidget {
-  const ScanScreen({super.key, required this.state, this.session});
+  const ScanScreen({super.key, required this.state, this.session, this.onFaceVerified});
 
   final AppState state;
 
   /// Optional injected session for device-independent UI checks.
   final ScannerSession? session;
+
+  /// Called only after one face, the blink challenge, and the display/device
+  /// check have completed. The scan itself does not identify a person.
+  final Future<void> Function()? onFaceVerified;
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
@@ -58,7 +62,11 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
     final scanAgain = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) =>
-            ScanResultScreen(state: widget.state, detection: detection),
+            ScanResultScreen(
+              state: widget.state,
+              detection: detection,
+              onFaceVerified: widget.onFaceVerified,
+            ),
       ),
     );
     if (!mounted) return;

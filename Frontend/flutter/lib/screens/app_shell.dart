@@ -12,6 +12,7 @@ import 'scan_screen.dart';
 import 'bank_link_screen.dart';
 import 'balance_screen.dart';
 import '../services/bank_balance_service.dart';
+import '../services/face_enrollment_service.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -21,12 +22,16 @@ class AppShell extends StatefulWidget {
     this.profile,
     this.onSaveProfile,
     this.balanceService = const UnconnectedBankBalanceService(),
+    this.accessToken = '',
+    this.faceEnrollmentService,
   });
   final BankBalanceService balanceService;
   final ProfileData? profile;
   final Future<ProfileData> Function(String name, String email)? onSaveProfile;
   final AppState state;
   final VoidCallback onSignOut;
+  final String accessToken;
+  final FaceEnrollmentService? faceEnrollmentService;
   @override
   State<AppShell> createState() => _AppShellState();
 }
@@ -40,6 +45,35 @@ class _AppShellState extends State<AppShell> {
     Icons.swap_horiz_rounded,
     Icons.person_outline_rounded,
   ];
+  late final FaceEnrollmentService _faceEnrollment =
+      widget.faceEnrollmentService ?? FaceEnrollmentService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFaceEnrollment();
+  }
+
+  Future<void> _loadFaceEnrollment() async {
+    if (widget.accessToken.isEmpty) return;
+    try {
+      final enrolled = await _faceEnrollment.enrolled(widget.accessToken);
+      if (mounted) widget.state.setFaceRegistered(enrolled);
+    } catch (_) {
+      // A temporary availability problem must not erase the saved enrollment UI.
+    }
+  }
+
+  Future<void> _registerFace() async {
+    await _faceEnrollment.register(widget.accessToken);
+    if (mounted) widget.state.setFaceRegistered(true);
+  }
+
+  @override
+  void dispose() {
+    if (widget.faceEnrollmentService == null) _faceEnrollment.dispose();
+    super.dispose();
+  }
   void _select(int index) => setState(() => _selected = index);
   void _payment() => Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -58,6 +92,14 @@ class _AppShellState extends State<AppShell> {
   );
   void _scan() => Navigator.of(context).push(
     MaterialPageRoute<void>(builder: (_) => ScanScreen(state: widget.state)),
+  );
+  void _registerFaceScan() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => ScanScreen(
+        state: widget.state,
+        onFaceVerified: _registerFace,
+      ),
+    ),
   );
   void _balance() => Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -137,6 +179,7 @@ class _AppShellState extends State<AppShell> {
           onBalance: _balance,
           onActivity: () => _select(2),
           onLinkBank: _linkBank,
+          onRegisterFace: _registerFaceScan,
         ),
       };
       return Scaffold(

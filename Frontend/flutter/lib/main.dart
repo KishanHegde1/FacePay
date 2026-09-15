@@ -216,6 +216,7 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
         ? AppShell(
             state: _state,
             profile: _profile,
+            accessToken: _session!.accessToken,
             onSaveProfile: _saveProfile,
             onSignOut: _signOut,
           )

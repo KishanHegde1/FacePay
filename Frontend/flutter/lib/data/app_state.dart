@@ -60,6 +60,7 @@ class AppState extends ChangeNotifier {
   String email = '';
   double balance = 0;
   bool faceEnabled = true;
+  bool faceRegistered = false;
   bool notificationsEnabled = true;
   DemoLinkedBank? linkedBank;
   final List<PaymentTransaction> transactions = [];
@@ -67,6 +68,13 @@ class AppState extends ChangeNotifier {
 
   void setFaceEnabled(bool value) {
     faceEnabled = value;
+    notifyListeners();
+  }
+
+  /// This reflects the server-side enrollment record, never a raw face image
+  /// or a locally invented biometric match.
+  void setFaceRegistered(bool value) {
+    faceRegistered = value;
     notifyListeners();
   }
 

@@ -170,3 +170,37 @@ pub(crate) async fn logout(pool: &PgPool, token: &str) -> Result<(), ApiError> {
         .map_err(ApiError::database_unavailable)?;
     Ok(())
 }
+
+pub(crate) async fn face_enrolled(pool: &PgPool, token: &str) -> Result<bool, ApiError> {
+    let enrolled = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM facepay.face_enrollments e JOIN facepay.auth_sessions s ON s.profile_id = e.profile_id WHERE s.token_hash = $1)",
+    )
+    .bind(token_hash(token).as_slice())
+    .fetch_one(pool)
+    .await
+    .map_err(ApiError::database_unavailable)?;
+    Ok(enrolled)
+}
+
+pub(crate) async fn register_face_enrollment(
+    pool: &PgPool,
+    token: &str,
+    device_id_hash: &[u8],
+    liveness_method: &str,
+) -> Result<(), ApiError> {
+    let updated = sqlx::query(
+        "INSERT INTO facepay.face_enrollments (profile_id, device_id_hash, liveness_method)
+         SELECT s.profile_id, $2, $3 FROM facepay.auth_sessions s WHERE s.token_hash = $1
+         ON CONFLICT (profile_id) DO UPDATE SET device_id_hash = EXCLUDED.device_id_hash, liveness_method = EXCLUDED.liveness_method, updated_at = now()",
+    )
+    .bind(token_hash(token).as_slice())
+    .bind(device_id_hash)
+    .bind(liveness_method)
+    .execute(pool)
+    .await
+    .map_err(ApiError::database_unavailable)?;
+    if updated.rows_affected() != 1 {
+        return Err(ApiError::unauthorized());
+    }
+    Ok(())
+}

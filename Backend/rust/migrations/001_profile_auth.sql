@@ -26,3 +26,13 @@ CREATE TABLE IF NOT EXISTS facepay.auth_sessions (
 );
 
 CREATE INDEX IF NOT EXISTS auth_sessions_profile_id_idx ON facepay.auth_sessions(profile_id);
+
+-- A device-bound liveness enrollment record. It intentionally contains no
+-- face image, landmarks, or unencrypted face template.
+CREATE TABLE IF NOT EXISTS facepay.face_enrollments (
+    profile_id text PRIMARY KEY REFERENCES facepay.profiles(id) ON DELETE CASCADE,
+    device_id_hash bytea NOT NULL CHECK (octet_length(device_id_hash) = 32),
+    liveness_method varchar(32) NOT NULL CHECK (liveness_method = 'two_blink_v1'),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);

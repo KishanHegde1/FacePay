@@ -14,6 +14,7 @@ class DashboardScreen extends StatelessWidget {
     required this.onBalance,
     required this.onActivity,
     required this.onLinkBank,
+    required this.onRegisterFace,
   });
 
   final AppState state;
@@ -24,6 +25,7 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onBalance;
   final VoidCallback onActivity;
   final VoidCallback onLinkBank;
+  final VoidCallback onRegisterFace;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -280,8 +282,10 @@ class DashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               if (!compact)
-                const Text(
-                  'Face verification will be connected when payment services are ready.',
+                Text(
+                  state.faceRegistered
+                      ? 'Face setup is registered on this device.'
+                      : 'Register FacePay on this device with a two-blink check.',
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.6,
@@ -290,14 +294,14 @@ class DashboardScreen extends StatelessWidget {
                 ),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: onSend,
+                onPressed: onRegisterFace,
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   alignment: Alignment.centerLeft,
                   foregroundColor: const Color(0xFF5840A6),
                 ),
-                child: const Text(
-                  'View payment setup  →',
+                child: Text(
+                  state.faceRegistered ? 'Face registered  →' : 'Register Face  →',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                 ),
               ),
