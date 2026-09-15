@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/app_state.dart';
 import '../services/face_scan_purpose.dart';
+import '../services/scanner_session.dart';
 import '../ui/design.dart';
 import 'scan_screen.dart';
 
@@ -13,11 +14,15 @@ class PaymentScreen extends StatefulWidget {
     required this.state,
     this.onComplete,
     this.onLinkBank,
+    this.scannerSessionFactory,
   });
 
   final AppState state;
   final VoidCallback? onComplete;
   final VoidCallback? onLinkBank;
+
+  /// Creates a fresh scanner for each approval attempt in device-free tests.
+  final ScannerSession Function()? scannerSessionFactory;
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
@@ -80,10 +85,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
+    final scannerSession = widget.scannerSessionFactory?.call();
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => ScanScreen(
           state: widget.state,
+          session: scannerSession,
           purpose: FaceScanPurpose.demoPaymentApproval,
           closeAfterFaceVerified: true,
           onFaceVerified: () async {

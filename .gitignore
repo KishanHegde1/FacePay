@@ -1,0 +1,11 @@
+# Local synchronization records and backups
+/review-backups/
+/SYNC_REPORT.md
+/SYNC_MANIFEST.json
+# Private configuration and signing material
+**/.env
+**/.env.*
+!**/.env.example
+**/*.jks
+**/*.keystore
+**/key.properties

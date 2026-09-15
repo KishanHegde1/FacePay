@@ -61,6 +61,19 @@ class LayoutScannerSession extends ScannerSession {
   Future<void> switchCamera() async {}
 }
 
+class PaymentScannerSession extends LayoutScannerSession {
+  @override
+  ScannerStatus status = ScannerStatus.scanning;
+  @override
+  ScanDetection? detection;
+
+  void complete(ScanDetection value) {
+    detection = value;
+    status = ScannerStatus.detected;
+    notifyListeners();
+  }
+}
+
 class MemorySessionStore implements SessionStore {
   String? token;
   @override
@@ -511,14 +524,18 @@ void main() {
     },
   );
 
-  testWidgets('demo payment records only the user-entered local preview item', (
+  testWidgets('demo payment requires face check and explicit demo approval', (
     tester,
   ) async {
     sizeScreen(tester, const Size(390, 844));
     final state = AppState();
     addTearDown(state.dispose);
     state.linkDemoBank(name: 'HDFC Bank', monogram: 'HDFC');
-    await tester.pumpWidget(host(PaymentScreen(state: state)));
+    state.setFaceRegistered(true);
+    final scanner = PaymentScannerSession();
+    await tester.pumpWidget(
+      host(PaymentScreen(state: state, scannerSessionFactory: () => scanner)),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('DEMO MODE · NO MONEY MOVES'), findsOneWidget);
@@ -530,15 +547,79 @@ void main() {
       find.byKey(const ValueKey('demo-payment-amount')),
       '500',
     );
-    await tapVisible(tester, find.text('Review demo payment'));
+    await tapVisible(tester, find.text('Review & approve'));
     expect(find.textContaining('No money moves'), findsWidgets);
-    await tapVisible(tester, find.text('Record demo payment'));
+    expect(state.transactions, isEmpty);
+    await tapVisible(tester, find.text('Continue to face check'));
+    expect(find.byType(ScanScreen), findsOneWidget);
+    expect(state.transactions, isEmpty);
+    scanner.complete(const ScanDetection.face());
+    scanner.complete(const ScanDetection.face());
+    await tester.pumpAndSettle();
+    expect(find.text('Two blinks detected'), findsOneWidget);
+    expect(
+      find.textContaining('not a real transfer or bank authorization'),
+      findsOneWidget,
+    );
+    expect(state.transactions, isEmpty);
+    await tapVisible(tester, find.text('Approve demo payment'));
     expect(find.text('Demo payment recorded'), findsWidgets);
     expect(state.balance, 0);
     expect(state.transactions, hasLength(1));
     expect(state.transactions.single.title, 'My test recipient');
     expect(state.transactions.single.amount, 500);
     expect(state.transactions.single.isDemo, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('demo payment requires enrollment before opening approval', (
+    tester,
+  ) async {
+    sizeScreen(tester, const Size(390, 844));
+    final state = AppState();
+    addTearDown(state.dispose);
+    state.linkDemoBank(name: 'HDFC Bank', monogram: 'HDFC');
+    await tester.pumpWidget(host(PaymentScreen(state: state)));
+    await tapVisible(tester, find.text('Register FacePay first'));
+    expect(
+      find.text('Open Home and choose Register Face first.'),
+      findsOneWidget,
+    );
+    expect(find.byType(ScanScreen), findsNothing);
+    expect(state.transactions, isEmpty);
+    expect(state.balance, 0);
+  });
+
+  testWidgets('QR detection cannot approve a pending demo payment', (
+    tester,
+  ) async {
+    sizeScreen(tester, const Size(390, 844));
+    final state = AppState();
+    addTearDown(state.dispose);
+    state.linkDemoBank(name: 'HDFC Bank', monogram: 'HDFC');
+    state.setFaceRegistered(true);
+    final scanner = PaymentScannerSession();
+    await tester.pumpWidget(
+      host(PaymentScreen(state: state, scannerSessionFactory: () => scanner)),
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('demo-payment-recipient')),
+      'My test recipient',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('demo-payment-amount')),
+      '500',
+    );
+    await tapVisible(tester, find.text('Review & approve'));
+    await tapVisible(tester, find.text('Continue to face check'));
+    scanner.complete(const ScanDetection.qr('unverified-recipient'));
+    await tester.pumpAndSettle();
+    expect(find.text('Scanned content · unverified'), findsOneWidget);
+    expect(find.text('Approve demo payment'), findsNothing);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(state.transactions, isEmpty);
+    expect(state.balance, 0);
     expect(tester.takeException(), isNull);
   });
 

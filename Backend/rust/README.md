@@ -1,6 +1,6 @@
-# Login and profile setup
+# FacePay Rust API setup
 
-The Flutter login/profile flow uses the Rust API and Neon PostgreSQL. Other payment screens are still frontend demos.
+The Android app uses Firebase Phone Authentication, then exchanges its Firebase ID token with this API. Login sessions, profiles and face enrollment metadata persist in Neon PostgreSQL. Demo banks and payments live only in app memory. See [current status](../../APP_STATUS.md) and [run instructions](../../docs/RUNNING.md).
 
 ## Local configuration
 
@@ -70,8 +70,8 @@ Session rows persist across backend restarts; raw bearer tokens are not stored i
 - `GET /auth/me` — restore account with Bearer token
 - `GET /profile` — read own profile
 - `PATCH /profile` — `{ "name": "Your name", "email": "you@example.com" }`; blank/null email clears it
-- `GET /face-enrollment` — read whether the signed-in account has a saved device-bound enrollment
-- `POST /face-enrollment` — saves a completed two-blink enrollment against the current app installation
+- `GET /face-enrollment` — checks whether the account has enrollment metadata; it does not compare the current app installation
+- `POST /face-enrollment` — stores a hashed client-supplied app identifier and liveness-method label; the backend does not independently verify liveness
 - `POST /auth/logout` — revoke Bearer token
 
 Firebase Phone Authentication is used by Android when the Firebase app enables Phone sign-in and has the required signing fingerprints. The debug Android signing fingerprints are:
@@ -81,6 +81,10 @@ Firebase Phone Authentication is used by Android when the Firebase app enables P
 - SHA-256: `F2:43:D2:ED:14:F5:0E:E1:15:9A:3D:3B:70:9D:30:FD:3C:3B:60:14:14:55:B7:37:55:A2:59:3B:62:49:90:EF`
 
 These identify the debug signing certificate, not a phone number. Release signing has different fingerprints.
+
+## Face enrollment limitations
+
+No face template, image or identity match is stored or performed. Installation identifiers are currently recorded but not enforced at lookup. Client blink/screen checks are a demo interaction and may miss replay attacks. They do not authorize real payments.
 
 ## Checks
 

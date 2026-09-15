@@ -106,11 +106,16 @@ void main() {
       session.found(const ScanDetection.face());
       await tester.pumpAndSettle();
       expect(find.text('Two blinks detected'), findsOneWidget);
-      expect(find.text('Next: face recognition'), findsOneWidget);
+      expect(find.text('Face liveness check complete.'), findsOneWidget);
       expect(
-        find.textContaining('has not identified a person'),
+        find.textContaining('No face image or ML Kit landmark data is saved.'),
         findsOneWidget,
       );
+      expect(
+        find.textContaining('face-template provider is still required'),
+        findsOneWidget,
+      );
+      expect(state.faceRegistered, isFalse);
       expect(state.transactions, isEmpty);
       expect(state.balance, 0);
     },
