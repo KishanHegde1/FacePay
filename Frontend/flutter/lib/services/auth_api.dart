@@ -369,15 +369,30 @@ class FirebasePhoneAuthService implements AuthService {
       'invalid-phone-number' => 'invalid_phone',
       'too-many-requests' || 'quota-exceeded' => 'rate_limited',
       'session-expired' => 'challenge_expired',
+      'operation-not-allowed' => 'phone_provider_disabled',
+      'app-not-authorized' ||
+      'invalid-app-credential' ||
+      'missing-client-identifier' => 'app_not_authorized',
+      'captcha-check-failed' => 'app_verification_failed',
+      'network-request-failed' => 'network_unavailable',
       _ => 'verification_failed',
     };
     final message = switch (code) {
       'invalid_phone' => 'Enter a valid mobile number.',
       'rate_limited' => 'Too many attempts. Please wait and try again.',
       'challenge_expired' => 'This code has expired. Request a new one.',
+      'phone_provider_disabled' =>
+        'Enable Phone sign-in in Firebase Authentication, then try again.',
+      'app_not_authorized' =>
+        'Firebase does not recognize this Android app. Add its SHA fingerprints and rebuild.',
+      'app_verification_failed' =>
+        'Firebase could not verify this app. Check its SHA fingerprints and Google Play services.',
+      'network_unavailable' =>
+        'Check the phone internet connection and try again.',
       _ => 'We could not verify this number. Please try again.',
     };
-    return AuthFailure(message, code: code);
+    final debugDetail = kDebugMode ? ' [Firebase: ${error.code}]' : '';
+    return AuthFailure('$message$debugDetail', code: code);
   }
 
   @override
