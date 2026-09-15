@@ -13,6 +13,7 @@ import 'bank_link_screen.dart';
 import 'balance_screen.dart';
 import '../services/bank_balance_service.dart';
 import '../services/face_enrollment_service.dart';
+import '../services/face_scan_purpose.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -74,6 +75,7 @@ class _AppShellState extends State<AppShell> {
     if (widget.faceEnrollmentService == null) _faceEnrollment.dispose();
     super.dispose();
   }
+
   void _select(int index) => setState(() => _selected = index);
   void _payment() => Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -98,6 +100,7 @@ class _AppShellState extends State<AppShell> {
       builder: (_) => ScanScreen(
         state: widget.state,
         onFaceVerified: _registerFace,
+        purpose: FaceScanPurpose.enrollment,
       ),
     ),
   );

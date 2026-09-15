@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/app_state.dart';
 import '../services/scan_detection.dart';
+import '../services/face_scan_purpose.dart';
 import '../ui/design.dart';
 import 'payment_screen.dart';
 
@@ -13,11 +14,15 @@ class ScanResultScreen extends StatefulWidget {
     required this.state,
     required this.detection,
     this.onFaceVerified,
+    this.purpose = FaceScanPurpose.scan,
+    this.closeAfterFaceVerified = false,
   });
 
   final AppState state;
   final ScanDetection detection;
   final Future<void> Function()? onFaceVerified;
+  final FaceScanPurpose purpose;
+  final bool closeAfterFaceVerified;
 
   @override
   State<ScanResultScreen> createState() => _ScanResultScreenState();
@@ -31,10 +36,16 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   Future<void> _saveFace() async {
     final callback = widget.onFaceVerified;
     if (callback == null || _saving || _saved) return;
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       await callback();
-      if (mounted) setState(() => _saved = true);
+      if (mounted) {
+        setState(() => _saved = true);
+        if (widget.closeAfterFaceVerified) Navigator.of(context).pop(false);
+      }
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
     } finally {
@@ -45,6 +56,8 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   @override
   Widget build(BuildContext context) {
     final qr = widget.detection.kind == ScanDetectionKind.qr;
+    final enrollment = widget.purpose == FaceScanPurpose.enrollment;
+    final demoApproval = widget.purpose == FaceScanPurpose.demoPaymentApproval;
     final raw = widget.detection.rawValue ?? '';
     final preview = raw.length > 2048 ? '${raw.substring(0, 2048)}…' : raw;
     return Scaffold(
@@ -68,12 +81,18 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      qr ? 'Review scanned code' : (_saved ? 'Face registration complete' : 'Two blinks detected'),
+                      qr
+                          ? 'Review scanned code'
+                          : _saved
+                          ? (demoApproval
+                                ? 'Demo payment approved'
+                                : 'Face registration complete')
+                          : 'Two blinks detected',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 16),
                     if (qr) ...[
-                      const Text(
+                      Text(
                         'Scanned content · unverified',
                         style: TextStyle(color: AppColors.muted),
                       ),
@@ -85,18 +104,30 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                       ),
                     ] else ...[
                       Text(
-                        _saved ? 'This device is registered.' : 'Ready to register FacePay on this device.',
+                        _saved
+                            ? (demoApproval
+                                  ? 'Face approval complete for this demo payment.'
+                                  : 'This device is registered.')
+                            : demoApproval
+                            ? 'Ready to approve this demo payment.'
+                            : enrollment
+                            ? 'Ready to register FacePay on this device.'
+                            : 'Face liveness check complete.',
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 12),
                       Text(
                         _saved
-                            ? 'The protected enrollment record was saved in your FacePay account. A different app installation must register again.'
+                            ? (demoApproval
+                                  ? 'The demo payment was recorded locally. No money moved.'
+                                  : 'The protected enrollment record was saved in your FacePay account. A different app installation must register again.')
                             : 'The scan found one face, completed two blinks, and did not detect a phone, tablet, or display in the camera view.',
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        'No face image or ML Kit landmark data is saved. A certified encrypted face-template provider is still required before real face payments.',
+                      Text(
+                        demoApproval
+                            ? 'This is a demo approval only. It is not a real transfer or bank authorization.'
+                            : 'No face image or ML Kit landmark data is saved. A certified encrypted face-template provider is still required before real face payments.',
                         style: TextStyle(color: AppColors.muted),
                       ),
                     ],
@@ -107,14 +138,22 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
               if (!qr && widget.onFaceVerified != null && !_saved) ...[
                 const SizedBox(height: 24),
                 PrimaryButton(
-                  label: _saving ? 'Saving…' : 'Register Face',
+                  label: _saving
+                      ? (demoApproval ? 'Approving…' : 'Saving…')
+                      : (demoApproval
+                            ? 'Approve demo payment'
+                            : 'Register Face'),
                   onPressed: _saving ? null : _saveFace,
                   icon: Icons.verified_user_outlined,
                 ),
-                if (_error != null) Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(_error!, style: const TextStyle(color: Colors.redAccent)),
-                ),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
               ],
               const SizedBox(height: 24),
               PrimaryButton(

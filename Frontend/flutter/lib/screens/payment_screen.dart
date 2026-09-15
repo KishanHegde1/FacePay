@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../data/app_state.dart';
+import '../services/face_scan_purpose.dart';
 import '../ui/design.dart';
+import 'scan_screen.dart';
 
 /// A local preview of the payment UI. It records a clearly labelled, in-memory
 /// demo activity item and never calls a bank, PSP, backend, or persistence API.
@@ -55,6 +57,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!widget.state.faceRegistered) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Register FacePay on this device before approving a demo payment.',
+          ),
+        ),
+      );
+      return;
+    }
 
     final amount = _amount()!;
     final confirmed = await showModalBottomSheet<bool>(
@@ -68,12 +80,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
-
-    widget.state.recordDemoPayment(
-      recipient: _recipientController.text,
-      amount: amount,
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ScanScreen(
+          state: widget.state,
+          purpose: FaceScanPurpose.demoPaymentApproval,
+          closeAfterFaceVerified: true,
+          onFaceVerified: () async {
+            widget.state.recordDemoPayment(
+              recipient: _recipientController.text,
+              amount: amount,
+            );
+            if (mounted) {
+              setState(
+                () => _recordedPayment = widget.state.transactions.first,
+              );
+            }
+          },
+        ),
+      ),
     );
-    setState(() => _recordedPayment = widget.state.transactions.first);
   }
 
   void _startAnother() {
@@ -208,11 +234,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         const SizedBox(height: 20),
         PrimaryButton(
-          label: bank == null ? 'Link demo bank first' : 'Review demo payment',
+          label: bank == null
+              ? 'Link demo bank first'
+              : !widget.state.faceRegistered
+              ? 'Register FacePay first'
+              : 'Review & approve',
           icon: bank == null
               ? Icons.account_balance_outlined
               : Icons.arrow_forward_rounded,
-          onPressed: bank == null ? widget.onLinkBank : _review,
+          onPressed: bank == null
+              ? widget.onLinkBank
+              : widget.state.faceRegistered
+              ? _review
+              : () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Open Home and choose Register Face first.'),
+                  ),
+                ),
         ),
       ],
     );
@@ -396,8 +434,8 @@ class _DemoPaymentReviewSheet extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             PrimaryButton(
-              label: 'Record demo payment',
-              icon: Icons.check_rounded,
+              label: 'Continue to face check',
+              icon: Icons.face_retouching_natural,
               onPressed: () => Navigator.of(context).pop(true),
             ),
             const SizedBox(height: 8),

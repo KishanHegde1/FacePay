@@ -4,11 +4,19 @@ import 'package:flutter/material.dart';
 
 import '../data/app_state.dart';
 import '../services/scanner_session.dart';
+import '../services/face_scan_purpose.dart';
 import '../ui/design.dart';
 import 'scan_result_screen.dart';
 
 class ScanScreen extends StatefulWidget {
-  const ScanScreen({super.key, required this.state, this.session, this.onFaceVerified});
+  const ScanScreen({
+    super.key,
+    required this.state,
+    this.session,
+    this.onFaceVerified,
+    this.purpose = FaceScanPurpose.scan,
+    this.closeAfterFaceVerified = false,
+  });
 
   final AppState state;
 
@@ -18,6 +26,8 @@ class ScanScreen extends StatefulWidget {
   /// Called only after one face, the blink challenge, and the display/device
   /// check have completed. The scan itself does not identify a person.
   final Future<void> Function()? onFaceVerified;
+  final FaceScanPurpose purpose;
+  final bool closeAfterFaceVerified;
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
@@ -61,19 +71,24 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
     }
     final scanAgain = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) =>
-            ScanResultScreen(
-              state: widget.state,
-              detection: detection,
-              onFaceVerified: widget.onFaceVerified,
-            ),
+        builder: (_) => ScanResultScreen(
+          state: widget.state,
+          detection: detection,
+          onFaceVerified: widget.onFaceVerified,
+          purpose: widget.purpose,
+          closeAfterFaceVerified: widget.closeAfterFaceVerified,
+        ),
       ),
     );
     if (!mounted) return;
     setState(() => _showingResult = false);
     // Back leaves the camera paused. Only an explicit scan-again action
     // rearms detection, so an unchanged QR/face cannot loop through routes.
-    if (scanAgain == true && _active) _start();
+    if (widget.closeAfterFaceVerified && _active && scanAgain != true) {
+      Navigator.of(context).pop();
+    } else if (scanAgain == true && _active) {
+      _start();
+    }
   }
 
   void _start() {
