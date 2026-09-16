@@ -7,10 +7,10 @@ use std::{
 };
 
 use axum::{
-    extract::{rejection::JsonRejection, DefaultBodyLimit, State},
+    extract::{rejection::JsonRejection, DefaultBodyLimit, Path, State},
     http::{header, HeaderMap, HeaderValue, Method, StatusCode, Uri},
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
@@ -20,6 +20,7 @@ use subtle::ConstantTimeEq;
 use tower_http::{cors::CorsLayer, set_header::SetResponseHeaderLayer};
 
 mod database;
+mod hdfc;
 use database::Profile;
 
 const CHALLENGE_TTL: Duration = Duration::from_secs(300);
@@ -42,6 +43,7 @@ pub struct Config {
     database_url: String,
     expected_database_name: String,
     firebase_web_api_key: Option<String>,
+    hdfc_config: hdfc::HdfcConfig,
 }
 
 impl Config {
@@ -62,6 +64,7 @@ impl Config {
         let firebase_web_api_key = lookup("FIREBASE_WEB_API_KEY")
             .map(|value| value.trim().to_owned())
             .filter(|value| !value.is_empty());
+        let hdfc_config = hdfc::HdfcConfig::from_lookup(|key| lookup(key))?;
         database::connection_options(&database_url)?;
         let app_env = lookup("APP_ENV").unwrap_or_else(|| "production".into());
         if !matches!(app_env.as_str(), "development" | "test" | "production") {
@@ -158,6 +161,7 @@ impl Config {
             database_url,
             expected_database_name,
             firebase_web_api_key,
+            hdfc_config,
         })
     }
 }
@@ -310,6 +314,7 @@ struct AppState {
     config: Config,
     store: Arc<Mutex<Store>>,
     pool: PgPool,
+    hdfc: hdfc::HdfcClient,
 }
 
 #[derive(Deserialize)]
@@ -485,6 +490,13 @@ impl ApiError {
             "Provide the required fields in a JSON request body.",
         )
     }
+    fn hdfc_not_ready() -> Self {
+        Self::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "hdfc_sandbox_setup_required",
+            "HDFC sandbox verification is being configured. Please try again later.",
+        )
+    }
     fn rate_limited(code: &'static str, message: &'static str, retry_after: u64) -> Self {
         Self {
             status: StatusCode::TOO_MANY_REQUESTS,
@@ -522,13 +534,15 @@ pub async fn initialize(config: Config) -> Result<Router, String> {
 fn router(config: Config, pool: PgPool) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(config.origins.clone())
-        .allow_methods([Method::GET, Method::POST, Method::PATCH])
+        .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
         .max_age(Duration::from_secs(600));
+    let hdfc = hdfc::HdfcClient::new(config.hdfc_config.clone());
     let state = AppState {
         config,
         store: Arc::new(Mutex::new(Store::default())),
         pool,
+        hdfc,
     };
     Router::new()
         .route("/health", get(health))
@@ -541,6 +555,15 @@ fn router(config: Config, pool: PgPool) -> Router {
         .route(
             "/face-enrollment",
             get(get_face_enrollment).post(register_face_enrollment),
+        )
+        .route("/api/bank/hdfc/otp/generate", post(hdfc_schema_required))
+        .route("/api/bank/hdfc/otp/validate", post(hdfc_schema_required))
+        .route("/api/bank/hdfc/accounts", post(hdfc_schema_required))
+        .route("/api/bank/hdfc/accounts/link", post(hdfc_schema_required))
+        .route("/api/bank/accounts", get(list_linked_bank_accounts))
+        .route(
+            "/api/bank/accounts/{id}",
+            delete(unlink_linked_bank_account),
         )
         .fallback(|| async {
             ApiError::new(
@@ -754,6 +777,57 @@ async fn register_face_enrollment(
     )
     .await?;
     Ok(Json(FaceEnrollmentResponse { enrolled: true }))
+}
+
+/// These FacePay routes are intentionally installed now so Flutter only ever
+/// talks to FacePay. They do not accept or send a provider body until HDFC's
+/// exact OAuth/OTP/CASA schemas are available in the project.
+async fn hdfc_schema_required(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<StatusCode, ApiError> {
+    database::authenticated_profile(&state.pool, bearer_token(&headers)?).await?;
+    // Keep the same response whether HDFC credentials are absent or present.
+    // This avoids exposing integration configuration to a signed-in user.
+    let _configured = state.hdfc.sandbox_configured();
+    Err(ApiError::hdfc_not_ready())
+}
+
+#[derive(Serialize)]
+struct LinkedBankAccountsResponse {
+    accounts: Vec<database::LinkedBankAccount>,
+}
+
+async fn list_linked_bank_accounts(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<LinkedBankAccountsResponse>, ApiError> {
+    let accounts = database::linked_bank_accounts(&state.pool, bearer_token(&headers)?).await?;
+    Ok(Json(LinkedBankAccountsResponse { accounts }))
+}
+
+async fn unlink_linked_bank_account(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    if id.len() != 64 || !id.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            "bank_account_not_found",
+            "This bank account is no longer available.",
+        ));
+    }
+    let removed =
+        database::unlink_linked_bank_account(&state.pool, bearer_token(&headers)?, &id).await?;
+    if !removed {
+        return Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            "bank_account_not_found",
+            "This bank account is no longer available.",
+        ));
+    }
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[cfg(test)]

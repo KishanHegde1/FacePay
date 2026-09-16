@@ -39,5 +39,27 @@ CREATE TABLE IF NOT EXISTS facepay.face_enrollments (
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Stores only provider-issued references and masked values after server-side
+-- verification. It does not store full account numbers, OTPs, or tokens.
+CREATE TABLE IF NOT EXISTS facepay.linked_bank_accounts (
+    id text PRIMARY KEY CHECK (id ~ '^[0-9a-f]{64}$'),
+    profile_id text NOT NULL REFERENCES facepay.profiles(id) ON DELETE CASCADE,
+    bank_name varchar(80) NOT NULL CHECK (char_length(bank_name) > 0 AND bank_name = btrim(bank_name)),
+    bank_code varchar(32) NOT NULL CHECK (char_length(bank_code) > 0 AND bank_code = btrim(bank_code)),
+    account_reference varchar(512) NOT NULL CHECK (char_length(account_reference) > 0),
+    masked_account_number varchar(64) NOT NULL CHECK (char_length(masked_account_number) > 0),
+    account_type varchar(64) NULL,
+    account_holder_name varchar(160) NULL,
+    verification_status varchar(32) NOT NULL CHECK (verification_status = 'verified'),
+    provider varchar(64) NOT NULL CHECK (char_length(provider) > 0),
+    provider_customer_reference varchar(512) NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (profile_id, provider, account_reference)
+);
+
+CREATE INDEX IF NOT EXISTS linked_bank_accounts_profile_id_idx
+    ON facepay.linked_bank_accounts(profile_id);
 COMMIT;
 

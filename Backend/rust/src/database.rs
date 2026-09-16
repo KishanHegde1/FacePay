@@ -21,6 +21,22 @@ pub(crate) struct Profile {
     pub updated_at: DateTime<Utc>,
 }
 
+/// A verified account reference returned by a bank provider. Full account
+/// numbers, OTPs, access tokens, and raw provider payloads are never stored.
+#[derive(Clone, Serialize, sqlx::FromRow)]
+pub(crate) struct LinkedBankAccount {
+    pub id: String,
+    pub bank_name: String,
+    pub bank_code: String,
+    pub masked_account_number: String,
+    pub account_type: Option<String>,
+    pub account_holder_name: Option<String>,
+    pub verification_status: String,
+    pub provider: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 pub(crate) fn connection_options(value: &str) -> Result<PgConnectOptions, String> {
     let parsed =
         url::Url::parse(value).map_err(|_| "DATABASE_URL must be a PostgreSQL connection URL.")?;
@@ -203,4 +219,43 @@ pub(crate) async fn register_face_enrollment(
         return Err(ApiError::unauthorized());
     }
     Ok(())
+}
+
+pub(crate) async fn linked_bank_accounts(
+    pool: &PgPool,
+    token: &str,
+) -> Result<Vec<LinkedBankAccount>, ApiError> {
+    sqlx::query_as::<_, LinkedBankAccount>(
+        "SELECT b.id, b.bank_name, b.bank_code, b.masked_account_number,
+                b.account_type, b.account_holder_name, b.verification_status,
+                b.provider, b.created_at, b.updated_at
+         FROM facepay.linked_bank_accounts b
+         JOIN facepay.auth_sessions s ON s.profile_id = b.profile_id
+         WHERE s.token_hash = $1
+         ORDER BY b.updated_at DESC",
+    )
+    .bind(token_hash(token).as_slice())
+    .fetch_all(pool)
+    .await
+    .map_err(ApiError::database_unavailable)
+}
+
+pub(crate) async fn unlink_linked_bank_account(
+    pool: &PgPool,
+    token: &str,
+    account_id: &str,
+) -> Result<bool, ApiError> {
+    // The session is part of the DELETE predicate, so an account id supplied
+    // by one customer can never remove an account linked by another customer.
+    let result = sqlx::query(
+        "DELETE FROM facepay.linked_bank_accounts b
+         USING facepay.auth_sessions s
+         WHERE b.id = $2 AND b.profile_id = s.profile_id AND s.token_hash = $1",
+    )
+    .bind(token_hash(token).as_slice())
+    .bind(account_id)
+    .execute(pool)
+    .await
+    .map_err(ApiError::database_unavailable)?;
+    Ok(result.rows_affected() == 1)
 }
