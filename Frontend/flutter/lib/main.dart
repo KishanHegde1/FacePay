@@ -10,20 +10,21 @@ import 'screens/splash_screen.dart';
 import 'screens/app_shell.dart';
 import 'ui/design.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // This project currently has an Android Firebase configuration. Desktop and
-  // web remain available for local UI tests without a Firebase configuration.
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-    await Firebase.initializeApp();
-  }
   runApp(const FacePaymentApp());
 }
 
 class FacePaymentApp extends StatefulWidget {
-  const FacePaymentApp({super.key, this.authService, this.sessionStore});
+  const FacePaymentApp({
+    super.key,
+    this.authService,
+    this.sessionStore,
+    this.initializeServices,
+  });
   final AuthService? authService;
   final SessionStore? sessionStore;
+  final Future<void> Function()? initializeServices;
   @override
   State<FacePaymentApp> createState() => _FacePaymentAppState();
 }
@@ -31,13 +32,10 @@ class FacePaymentApp extends StatefulWidget {
 class _FacePaymentAppState extends State<FacePaymentApp> {
   AppState _state = AppState();
   bool _splash = true, _busy = true;
+  bool _authReady = false;
   String? _error;
   Future<void> Function()? _retry;
-  late final AuthService _auth =
-      widget.authService ??
-      (FirebasePhoneAuthService.isSupported
-          ? FirebasePhoneAuthService()
-          : HttpAuthService());
+  late final AuthService _auth;
   late final SessionStore _store = widget.sessionStore ?? SecureSessionStore();
   final _navigatorKey = GlobalKey<NavigatorState>();
   AuthSession? _session;
@@ -47,6 +45,33 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
   void initState() {
     super.initState();
     unawaited(_restore());
+  }
+
+  Future<void> _initializeAuth() async {
+    if (_authReady) return;
+    try {
+      if (widget.initializeServices != null) {
+        await widget.initializeServices!();
+      } else if (widget.authService == null &&
+          !kIsWeb &&
+          defaultTargetPlatform == TargetPlatform.android) {
+        // Initialize alongside the startup presentation instead of holding the
+        // native launch screen. Firebase Auth must wait for this to complete.
+        await Firebase.initializeApp();
+      }
+      if (!mounted) return;
+      _auth =
+          widget.authService ??
+          (FirebasePhoneAuthService.isSupported
+              ? FirebasePhoneAuthService()
+              : HttpAuthService());
+      _authReady = true;
+    } catch (_) {
+      throw const AuthFailure(
+        'Phone sign-in could not start. Please try again.',
+        code: 'authentication_initialization_failed',
+      );
+    }
   }
 
   void _accept(AuthSession session) {
@@ -79,7 +104,10 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
   }
 
   Future<void> _restore() => _run(() async {
+    await _initializeAuth();
+    if (!mounted) return;
     final token = await _store.readToken();
+    if (!mounted) return;
     if (token == null) return;
     try {
       final session = await _auth.getCurrentUser(token);
@@ -146,7 +174,11 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
 
   @override
   void dispose() {
-    _auth.dispose();
+    if (_authReady) {
+      _auth.dispose();
+    } else {
+      widget.authService?.dispose();
+    }
     _state.dispose();
     super.dispose();
   }
@@ -173,10 +205,12 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'We could not restore your account',
+                    Text(
+                      _authReady
+                          ? 'We could not restore your account'
+                          : 'We could not start phone sign-in',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 23,
                         fontWeight: FontWeight.w800,
                         color: AppColors.ink,
@@ -202,11 +236,13 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
                       onPressed: _retry,
                       child: const Text('Try again'),
                     ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: _useAnotherAccount,
-                      child: const Text('Sign in with another account'),
-                    ),
+                    if (_authReady) ...[
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: _useAnotherAccount,
+                        child: const Text('Sign in with another account'),
+                      ),
+                    ],
                   ],
                 ),
               ),

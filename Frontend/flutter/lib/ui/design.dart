@@ -121,16 +121,15 @@ class FacePayLogo extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: light
-              ? Colors.white.withValues(alpha: .12)
-              : AppColors.primary,
-          borderRadius: BorderRadius.circular(size * .29),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(size * .26),
+        child: Image.asset(
+          'assets/brand/facepay-icon.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          excludeFromSemantics: true,
         ),
-        child: CustomPaint(painter: FaceMarkPainter(color: Colors.white)),
       ),
       if (showName) ...[
         SizedBox(width: size * .26),

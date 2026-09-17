@@ -27,7 +27,7 @@ void main() {
     await tester.pumpWidget(
       FacePaymentApp(authService: auth, sessionStore: store),
     );
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
     expect(find.byType(AppShell), findsOneWidget);
     expect(auth.restores, 1);
@@ -48,7 +48,7 @@ void main() {
       await tester.pumpWidget(
         FacePaymentApp(authService: auth, sessionStore: store),
       );
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
       expect(store.token, 'saved-token');
       expect(find.byType(AuthScreen), findsNothing);
@@ -73,7 +73,7 @@ void main() {
     await tester.pumpWidget(
       FacePaymentApp(authService: auth, sessionStore: store),
     );
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
 
     await helpers.tapVisible(tester, find.text('Sign in with another account'));
@@ -89,7 +89,7 @@ void main() {
     await tester.pumpWidget(
       FacePaymentApp(authService: auth, sessionStore: store),
     );
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
     expect(store.token, isNull);
     expect(find.byType(AuthScreen), findsOneWidget);
