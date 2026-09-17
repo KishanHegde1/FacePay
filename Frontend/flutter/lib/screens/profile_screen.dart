@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
+import '../services/profile_photo_service.dart';
 import '../services/auth_api.dart';
 import '../ui/design.dart';
 
@@ -8,10 +12,18 @@ class ProfileScreen extends StatefulWidget {
     this.profile,
     this.onSaveProfile,
     required this.onSignOut,
+    this.onSettings,
+    this.photo,
+    this.onPhotoChanged,
+    this.photoRepository,
   });
   final ProfileData? profile;
   final Future<ProfileData> Function(String name, String email)? onSaveProfile;
   final VoidCallback onSignOut;
+  final VoidCallback? onSettings;
+  final Uint8List? photo;
+  final ValueChanged<Uint8List?>? onPhotoChanged;
+  final ProfilePhotoRepository? photoRepository;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -24,6 +36,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ProfileData? _saved;
   bool _saving = false, _success = false;
   String? _error;
+  Uint8List? _photo;
+  bool _photoBusy = false;
+  late final ProfilePhotoRepository _photos =
+      widget.photoRepository ?? ProfilePhotoService();
 
   @override
   void initState() {
@@ -31,11 +47,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _saved = widget.profile;
     _name = TextEditingController(text: _saved?.name ?? '');
     _email = TextEditingController(text: _saved?.email ?? '');
+    _photo = widget.photo;
+    if (widget.onPhotoChanged == null) unawaited(_loadPhoto());
+  }
+
+  Future<void> _loadPhoto() async {
+    final id = widget.profile?.id;
+    if (id == null) return;
+    try {
+      final photo = await _photos.read(id);
+      if (mounted && widget.profile?.id == id) setState(() => _photo = photo);
+    } on ProfilePhotoFailure catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'Your photo could not be loaded. Please try again.',
+        );
+      }
+    }
+  }
+
+  Future<void> _editPhoto() async {
+    if (_photoBusy || widget.profile == null) return;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Your profile photo',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ),
+            ListTile(
+              key: const ValueKey('photo-gallery'),
+              leading: Icon(Icons.photo_library_outlined),
+              title: Text('Choose from gallery'),
+              onTap: () => Navigator.pop(context, 'gallery'),
+            ),
+            ListTile(
+              key: const ValueKey('photo-camera'),
+              leading: Icon(Icons.camera_alt_outlined),
+              title: Text('Take a photo'),
+              onTap: () => Navigator.pop(context, 'camera'),
+            ),
+            if (_photo != null)
+              ListTile(
+                key: const ValueKey('photo-remove'),
+                leading: Icon(Icons.delete_outline_rounded),
+                title: Text('Remove photo'),
+                onTap: () => Navigator.pop(context, 'remove'),
+              ),
+            SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    final id = widget.profile!.id;
+    setState(() {
+      _photoBusy = true;
+      _error = null;
+    });
+    try {
+      Uint8List? photo;
+      if (choice == 'remove') {
+        await _photos.remove(id);
+      } else {
+        photo = await _photos.choose(
+          id,
+          choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        );
+        if (photo == null) return;
+      }
+      if (!mounted || widget.profile?.id != id) return;
+      setState(() => _photo = photo);
+      widget.onPhotoChanged?.call(photo);
+    } on ProfilePhotoFailure catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'Your photo could not be updated. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _photoBusy = false);
+    }
   }
 
   @override
   void didUpdateWidget(covariant ProfileScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.photo != oldWidget.photo) _photo = widget.photo;
+    if (widget.profile?.id != oldWidget.profile?.id) {
+      _photo = widget.photo;
+      if (widget.onPhotoChanged == null) unawaited(_loadPhoto());
+    }
     if (widget.profile?.id != oldWidget.profile?.id ||
         (widget.profile != oldWidget.profile && !_hasChanges && !_saving)) {
       _saved = widget.profile;
@@ -111,17 +224,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'YOUR ACCOUNT',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.8,
-                    color: AppColors.muted,
+                    color: AppPalette.of(context).muted,
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Text(
+                SizedBox(height: 10),
+                Text(
                   'Your profile',
                   style: TextStyle(
                     fontSize: 32,
@@ -129,38 +242,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     letterSpacing: -1.1,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   'A few details. A little more you.',
-                  style: TextStyle(fontSize: 14, color: AppColors.muted),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppPalette.of(context).muted,
+                  ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: 28),
+                if (widget.onSettings != null) ...[
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: OutlinedButton.icon(
+                      onPressed: widget.onSettings,
+                      icon: Icon(Icons.settings_outlined),
+                      label: Text('Settings'),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                ],
                 if (profile == null)
                   SurfaceCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.person_outline_rounded,
                           size: 44,
-                          color: AppColors.primary,
+                          color: AppPalette.of(context).primary,
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
+                        SizedBox(height: 16),
+                        Text(
                           'Your profile is not available.',
                           textAlign: TextAlign.center,
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
+                        SizedBox(height: 8),
+                        Text(
                           'Sign in to load your account details.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.muted),
+                          style: TextStyle(color: AppPalette.of(context).muted),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         TextButton(
                           onPressed: widget.onSignOut,
-                          child: const Text('Sign out'),
+                          child: Text('Sign out'),
                         ),
                       ],
                     ),
@@ -175,39 +302,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Row(
                             children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryLight,
-                                  borderRadius: BorderRadius.circular(21),
-                                ),
-                                child: profile.name.isEmpty
-                                    ? const Icon(
-                                        Icons.person_outline_rounded,
-                                        size: 30,
-                                        color: AppColors.primary,
-                                      )
-                                    : Center(
-                                        child: Text(
-                                          profile.name
-                                              .trim()
-                                              .split(RegExp(r'\s+'))
-                                              .take(2)
-                                              .map(
-                                                (part) => part.characters.first
-                                                    .toUpperCase(),
-                                              )
-                                              .join(),
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            color: AppColors.primary,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
+                              PersonAvatar(
+                                name: profile.name,
+                                photo: _photo,
+                                size: 64,
                               ),
-                              const SizedBox(width: 18),
+                              SizedBox(width: 18),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,18 +318,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           : profile.name,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 19,
                                         fontWeight: FontWeight.w800,
                                         letterSpacing: -.5,
                                       ),
                                     ),
-                                    const SizedBox(height: 5),
-                                    const Text(
+                                    SizedBox(height: 5),
+                                    Text(
                                       'Your personal details',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: AppColors.muted,
+                                        color: AppPalette.of(context).muted,
                                       ),
                                     ),
                                   ],
@@ -237,9 +337,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 28),
+                          SizedBox(height: 28),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              OutlinedButton.icon(
+                                key: const ValueKey('profile-photo'),
+                                onPressed: _photoBusy ? null : _editPhoto,
+                                icon: Icon(Icons.add_a_photo_outlined),
+                                label: Text(
+                                  _photoBusy
+                                      ? 'Updating…'
+                                      : _photo == null
+                                      ? 'Add photo'
+                                      : 'Change photo',
+                                ),
+                              ),
+                              Text(
+                                'Saved securely on this device.',
+                                style: TextStyle(fontSize: 11),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 20),
                           const Divider(),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24),
                           _label('Full name'),
                           TextFormField(
                             key: const ValueKey('profile-name'),
@@ -250,7 +374,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textInputAction: TextInputAction.next,
                             maxLength: 80,
                             onChanged: _changed,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'Enter your full name',
                               prefixIcon: Icon(Icons.person_outline_rounded),
                               counterText: '',
@@ -260,35 +384,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ? 'Enter your name (at least 2 characters).'
                                 : null,
                           ),
-                          const SizedBox(height: 22),
+                          SizedBox(height: 22),
                           _label('Mobile number'),
                           TextFormField(
                             key: const ValueKey('profile-mobile'),
                             initialValue: profile.mobileNo,
                             readOnly: true,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               prefixIcon: Icon(Icons.phone_outlined),
                               suffixIcon: Icon(
                                 Icons.verified_rounded,
-                                color: Color(0xFF338767),
+                                color: (AppPalette.of(context).dark
+                                    ? const Color(0xFF88DAB9)
+                                    : const Color(0xFF338767)),
                                 size: 21,
                               ),
                             ),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
+                          SizedBox(height: 8),
+                          Text(
                             'Verified at sign-in. Your mobile number stays linked to this account.',
                             style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.muted,
+                              color: AppPalette.of(context).muted,
                               height: 1.6,
                             ),
                           ),
-                          const SizedBox(height: 22),
+                          SizedBox(height: 22),
                           _label('Email address'),
                           TextFormField(
                             key: const ValueKey('profile-email'),
@@ -303,7 +429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onFieldSubmitted: (_) {
                               if (_hasChanges) _save();
                             },
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'you@example.com',
                               prefixIcon: Icon(Icons.alternate_email_rounded),
                               counterText: '',
@@ -321,13 +447,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             },
                           ),
                           if (_error != null) ...[
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20),
                             Semantics(
                               liveRegion: true,
                               child: Text(
                                 _error!,
-                                style: const TextStyle(
-                                  color: AppColors.danger,
+                                style: TextStyle(
+                                  color: AppPalette.of(context).danger,
                                   fontSize: 12,
                                   height: 1.6,
                                 ),
@@ -335,7 +461,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                           if (_success) ...[
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20),
                             Semantics(
                               liveRegion: true,
                               child: Row(
@@ -343,13 +469,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Icon(
                                     Icons.check_circle_outline_rounded,
                                     size: 18,
-                                    color: Color(0xFF338767),
+                                    color: (AppPalette.of(context).dark
+                                        ? const Color(0xFF88DAB9)
+                                        : const Color(0xFF338767)),
                                   ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Profile saved.',
                                     style: TextStyle(
-                                      color: Color(0xFF338767),
+                                      color: (AppPalette.of(context).dark
+                                          ? const Color(0xFF88DAB9)
+                                          : const Color(0xFF338767)),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -358,7 +488,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                           ],
-                          const SizedBox(height: 28),
+                          SizedBox(height: 28),
                           PrimaryButton(
                             label: _saving ? 'Saving…' : 'Save changes',
                             loading: _saving,
@@ -372,14 +502,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   Center(
                     child: TextButton.icon(
                       onPressed: _saving ? null : widget.onSignOut,
-                      icon: const Icon(Icons.logout_rounded, size: 18),
-                      label: const Text('Sign out'),
+                      icon: Icon(Icons.logout_rounded, size: 18),
+                      label: Text('Sign out'),
                       style: TextButton.styleFrom(
-                        foregroundColor: AppColors.danger,
+                        foregroundColor: AppPalette.of(context).danger,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 16,
@@ -388,7 +518,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
               ],
             ),
           ),
@@ -401,7 +531,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     padding: const EdgeInsets.only(bottom: 10),
     child: Text(
       text,
-      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
     ),
   );
 }

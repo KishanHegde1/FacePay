@@ -1,4 +1,26 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+
+/// Context-scoped colors keep every route responsive to system appearance.
+class AppPalette {
+  const AppPalette(this.dark);
+  final bool dark;
+  static AppPalette of(BuildContext context) =>
+      AppPalette(Theme.of(context).brightness == Brightness.dark);
+  Color get background => dark ? const Color(0xFF14121D) : AppColors.background;
+  Color get surface => dark ? const Color(0xFF211E2C) : AppColors.surface;
+  Color get ink => dark ? const Color(0xFFF4F1FA) : AppColors.ink;
+  Color get muted => dark ? const Color(0xFFB6B0C6) : const Color(0xFF686779);
+  Color get border => dark ? const Color(0xFF3B354B) : AppColors.border;
+  Color get primaryLight =>
+      dark ? const Color(0xFF322A4B) : AppColors.primaryLight;
+  Color get primary => dark ? const Color(0xFFB7A7FF) : AppColors.primary;
+  Color get danger => dark ? const Color(0xFFFF9DAA) : AppColors.danger;
+  Color get mint => dark ? const Color(0xFF1D3A31) : AppColors.mint;
+  Color tint(Color value) => dark && value.computeLuminance() > .55
+      ? Color.alphaBlend(value.withValues(alpha: .09), surface)
+      : value;
+}
 
 abstract final class AppColors {
   static const background = Color(0xFFF7F8FC);
@@ -13,6 +35,55 @@ abstract final class AppColors {
 }
 
 abstract final class AppTheme {
+  static ThemeData get dark {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.dark,
+      primary: const Color(0xFFB7A7FF),
+      surface: const Color(0xFF211E2C),
+      onSurface: const Color(0xFFF4F1FA),
+      error: const Color(0xFFFF9DAA),
+    );
+    return light.copyWith(
+      brightness: Brightness.dark,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: const Color(0xFF14121D),
+      textTheme: light.textTheme.apply(
+        bodyColor: scheme.onSurface,
+        displayColor: scheme.onSurface,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: const Color(0xFF14121D),
+        foregroundColor: scheme.onSurface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+      ),
+      inputDecorationTheme: light.inputDecorationTheme.copyWith(
+        fillColor: const Color(0xFF292535),
+        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFFB6B0C6)),
+        helperStyle: const TextStyle(color: Color(0xFFB6B0C6)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFF3B354B)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(color: Color(0xFF3B354B)),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: scheme.primary),
+      ),
+      iconTheme: IconThemeData(color: scheme.onSurface),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: const Color(0xFF393346),
+        contentTextStyle: TextStyle(color: scheme.onSurface),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   static ThemeData get light => ThemeData(
     useMaterial3: true,
     fontFamily: 'Manrope',
@@ -140,7 +211,7 @@ class FacePayLogo extends StatelessWidget {
             fontSize: size * .62,
             letterSpacing: -1.3,
             fontWeight: FontWeight.w800,
-            color: light ? Colors.white : AppColors.ink,
+            color: light ? Colors.white : AppPalette.of(context).ink,
           ),
         ),
         const SizedBox(width: 3),
@@ -213,10 +284,12 @@ class SurfaceCard extends StatelessWidget {
   final double radius;
   @override
   Widget build(BuildContext context) => Material(
-    color: color ?? AppColors.surface,
+    color: color == null
+        ? AppPalette.of(context).surface
+        : AppPalette.of(context).tint(color!),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(radius),
-      side: const BorderSide(color: AppColors.border),
+      side: BorderSide(color: AppPalette.of(context).border),
     ),
     clipBehavior: Clip.antiAlias,
     child: Padding(padding: padding, child: child),
@@ -270,12 +343,27 @@ class PersonAvatar extends StatelessWidget {
     required this.name,
     this.color = AppColors.primaryLight,
     this.size = 44,
+    this.photo,
   });
   final String name;
   final Color color;
   final double size;
+  final Uint8List? photo;
   @override
   Widget build(BuildContext context) {
+    if (photo != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size * .36),
+        child: Image.memory(
+          photo!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) =>
+              PersonAvatar(name: name, color: color, size: size),
+        ),
+      );
+    }
     final initials = name
         .trim()
         .split(RegExp(r'\s+'))
@@ -289,21 +377,21 @@ class PersonAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: color,
+        color: AppPalette.of(context).tint(color),
         borderRadius: BorderRadius.circular(size * .36),
       ),
       child: initials.isEmpty
           ? Icon(
               Icons.person_outline_rounded,
               size: size * .48,
-              color: AppColors.ink,
+              color: AppPalette.of(context).ink,
             )
           : Text(
               initials,
               style: TextStyle(
                 fontSize: size * .3,
                 fontWeight: FontWeight.w800,
-                color: AppColors.ink,
+                color: AppPalette.of(context).ink,
               ),
             ),
     );

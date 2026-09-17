@@ -77,9 +77,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                           ? Icons.qr_code_rounded
                           : Icons.face_retouching_natural,
                       size: 48,
-                      color: AppColors.primary,
+                      color: AppPalette.of(context).primary,
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     Text(
                       qr
                           ? 'Review scanned code'
@@ -90,16 +90,16 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                           : 'Two blinks detected',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     if (qr) ...[
                       Text(
                         'Scanned content · unverified',
-                        style: TextStyle(color: AppColors.muted),
+                        style: TextStyle(color: AppPalette.of(context).muted),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       SelectableText(preview),
-                      const SizedBox(height: 20),
-                      const Text(
+                      SizedBox(height: 20),
+                      Text(
                         'Recipient verification and QR payments become available after the payment provider is connected. No payment has been created.',
                       ),
                     ] else ...[
@@ -113,9 +113,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                             : enrollment
                             ? 'Ready to register FacePay on this device.'
                             : 'Face liveness check complete.',
-                        style: const TextStyle(fontWeight: FontWeight.w800),
+                        style: TextStyle(fontWeight: FontWeight.w800),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Text(
                         _saved
                             ? (demoApproval
@@ -123,20 +123,20 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                                   : 'The protected enrollment record was saved in your FacePay account. A different app installation must register again.')
                             : 'The scan found one face, completed two blinks, and did not detect a phone, tablet, or display in the camera view.',
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Text(
                         demoApproval
                             ? 'This is a demo approval only. It is not a real transfer or bank authorization.'
                             : 'No face image or ML Kit landmark data is saved. A certified encrypted face-template provider is still required before real face payments.',
-                        style: TextStyle(color: AppColors.muted),
+                        style: TextStyle(color: AppPalette.of(context).muted),
                       ),
                     ],
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               if (!qr && widget.onFaceVerified != null && !_saved) ...[
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 PrimaryButton(
                   label: _saving
                       ? (demoApproval ? 'Approving…' : 'Saving…')
@@ -151,25 +151,25 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(
                       _error!,
-                      style: const TextStyle(color: Colors.redAccent),
+                      style: TextStyle(color: Colors.redAccent),
                     ),
                   ),
               ],
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               PrimaryButton(
                 label: 'Scan again',
                 onPressed: () => Navigator.of(context).pop(true),
                 icon: Icons.qr_code_scanner_rounded,
               ),
               if (qr) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 TextButton(
                   onPressed: () => Navigator.of(context).push<void>(
                     MaterialPageRoute(
                       builder: (_) => PaymentScreen(state: widget.state),
                     ),
                   ),
-                  child: const Text('View payment setup'),
+                  child: Text('View payment setup'),
                 ),
               ],
             ],

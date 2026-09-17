@@ -169,7 +169,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!didPop && !_loading) _changeNumber();
     },
     child: Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppPalette.of(context).surface,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 960;
@@ -210,25 +210,28 @@ class _AuthScreenState extends State<AuthScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (!wide) ...[
-                                  const FacePayLogo(size: 38),
-                                  const SizedBox(height: 42),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: const FacePayLogo(size: 38),
+                                  ),
+                                  SizedBox(height: 42),
                                 ],
                                 _buildForm(),
-                                const SizedBox(height: 34),
-                                const Row(
+                                SizedBox(height: 34),
+                                Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
                                       Icons.lock_outline_rounded,
                                       size: 14,
-                                      color: AppColors.muted,
+                                      color: AppPalette.of(context).muted,
                                     ),
                                     SizedBox(width: 7),
                                     Flexible(
                                       child: Text(
                                         'Your number. Your account.',
                                         style: TextStyle(
-                                          color: AppColors.muted,
+                                          color: AppPalette.of(context).muted,
                                           fontSize: 11,
                                         ),
                                       ),
@@ -259,7 +262,11 @@ class _AuthScreenState extends State<AuthScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -267,77 +274,76 @@ class _AuthScreenState extends State<AuthScreen> {
                     vertical: 7,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
+                    color: AppPalette.of(context).primaryLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
+                  child: Text(
                     'A LITTLE MORE HUMAN',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: AppPalette.of(context).primary,
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.3,
                     ),
                   ),
                 ),
-                const Spacer(),
                 Text(
                   verifying ? '02 / 02' : '01 / 02',
-                  style: const TextStyle(
-                    color: AppColors.muted,
+                  style: TextStyle(
+                    color: AppPalette.of(context).muted,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 26),
+            SizedBox(height: 26),
             if (verifying) ...[
               Container(
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
+                  color: AppPalette.of(context).primaryLight,
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.sms_outlined,
                   size: 28,
-                  color: AppColors.primary,
+                  color: AppPalette.of(context).primary,
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
             ],
             Text(
               verifying
                   ? 'One code.\nYou’re right here.'
                   : 'Good to see\nyou again.',
-              style: const TextStyle(
-                color: AppColors.ink,
+              style: TextStyle(
+                color: AppPalette.of(context).ink,
                 fontSize: 39,
                 height: 1.15,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -1.7,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               verifying
                   ? 'Enter the 6-digit code for $_displayPhone.'
                   : 'Enter your mobile number. We’ll help you\nget back to the people who matter.',
-              style: const TextStyle(
-                color: AppColors.muted,
+              style: TextStyle(
+                color: AppPalette.of(context).muted,
                 fontSize: 14,
                 height: 1.7,
               ),
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: 30),
             if (!verifying) ...[
-              const Text(
+              Text(
                 'Mobile number',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               TextFormField(
                 key: const ValueKey('auth-phone'),
                 controller: _phone,
@@ -351,7 +357,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
                 decoration: InputDecoration(
                   hintText: '10-digit mobile number',
-                  prefixIcon: const Padding(
+                  prefixIcon: Padding(
                     padding: EdgeInsets.only(left: 16, right: 12),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -375,11 +381,11 @@ class _AuthScreenState extends State<AuthScreen> {
                     : 'Enter a valid 10-digit Indian mobile number.',
                 onFieldSubmitted: (_) => _requestOtp(),
               ),
-              const SizedBox(height: 12),
-              const Text(
+              SizedBox(height: 12),
+              Text(
                 'No password to remember. Just a verification code.',
                 style: TextStyle(
-                  color: AppColors.muted,
+                  color: AppPalette.of(context).muted,
                   fontSize: 11,
                   height: 1.6,
                 ),
@@ -387,7 +393,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ] else ...[
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Verification code',
                       style: TextStyle(
@@ -398,14 +404,14 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   TextButton(
                     onPressed: _loading ? null : _changeNumber,
-                    child: const Text(
+                    child: Text(
                       'Change number',
                       style: TextStyle(fontSize: 11),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               TextFormField(
                 key: const ValueKey('auth-otp'),
                 controller: _otp,
@@ -414,7 +420,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 autofillHints: const [AutofillHints.oneTimeCode],
                 textInputAction: TextInputAction.done,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 30,
                   letterSpacing: 14,
@@ -424,7 +430,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(6),
                 ],
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: '------',
                   hintStyle: TextStyle(
                     fontFamily: 'Manrope',
@@ -444,38 +450,40 @@ class _AuthScreenState extends State<AuthScreen> {
                     : 'Enter all 6 digits of the verification code.',
                 onFieldSubmitted: (_) => _verifyOtp(),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 _expired
                     ? 'Code expired. Request a new one below.'
                     : 'Your code expires in ${_clock(_secondsUntil(_expiresAt))}',
                 style: TextStyle(
                   fontSize: 11,
-                  color: _expired ? AppColors.danger : AppColors.muted,
+                  color: _expired
+                      ? AppPalette.of(context).danger
+                      : AppPalette.of(context).muted,
                 ),
               ),
               if (_challenge!.developmentTest) ...[
-                const SizedBox(height: 18),
+                SizedBox(height: 18),
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
+                    color: AppPalette.of(context).primaryLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
                         Icons.science_outlined,
                         size: 18,
-                        color: AppColors.primary,
+                        color: AppPalette.of(context).primary,
                       ),
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'Test verification is ready. Use your configured test code. No SMS was sent.',
                           style: TextStyle(
-                            color: AppColors.primary,
+                            color: AppPalette.of(context).primary,
                             fontSize: 11,
                             height: 1.6,
                           ),
@@ -487,20 +495,20 @@ class _AuthScreenState extends State<AuthScreen> {
               ],
             ],
             if (_error != null) ...[
-              const SizedBox(height: 18),
+              SizedBox(height: 18),
               Semantics(
                 liveRegion: true,
                 child: Text(
                   _error!,
-                  style: const TextStyle(
-                    color: AppColors.danger,
+                  style: TextStyle(
+                    color: AppPalette.of(context).danger,
                     fontSize: 12,
                     height: 1.6,
                   ),
                 ),
               ),
             ],
-            const SizedBox(height: 26),
+            SizedBox(height: 26),
             PrimaryButton(
               label: _loading
                   ? (verifying ? 'Verifying…' : 'Please wait…')
@@ -516,7 +524,7 @@ class _AuthScreenState extends State<AuthScreen> {
               icon: Icons.arrow_forward_rounded,
             ),
             if (verifying) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Center(
                 child: TextButton(
                   onPressed: _loading || _resendSeconds > 0
@@ -526,16 +534,19 @@ class _AuthScreenState extends State<AuthScreen> {
                     _resendSeconds > 0
                         ? 'Resend in ${_clock(_resendSeconds)}'
                         : 'Resend code',
-                    style: const TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12),
                   ),
                 ),
               ),
             ] else ...[
-              const SizedBox(height: 20),
-              const Center(
+              SizedBox(height: 20),
+              Center(
                 child: Text(
                   'A simpler hello. A little more you.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                  style: TextStyle(
+                    color: AppPalette.of(context).muted,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],

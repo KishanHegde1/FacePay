@@ -173,14 +173,14 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
       final linked = widget.state.linkedBank;
       return Scaffold(
         appBar: AppBar(
-          title: const Text(
+          title: Text(
             'Link bank account',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
           ),
           leading: IconButton(
             tooltip: 'Back to dashboard',
             onPressed: () => Navigator.of(context).maybePop(),
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: Icon(Icons.arrow_back_rounded),
           ),
         ),
         body: linked != null
@@ -213,17 +213,17 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'DEMO BANK DIRECTORY',
           style: TextStyle(
-            color: AppColors.muted,
+            color: AppPalette.of(context).muted,
             fontSize: 10,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.8,
           ),
         ),
-        const SizedBox(height: 10),
-        const Text(
+        SizedBox(height: 10),
+        Text(
           'Choose your bank',
           style: TextStyle(
             fontSize: 31,
@@ -232,49 +232,56 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
             letterSpacing: -1.1,
           ),
         ),
-        const SizedBox(height: 9),
-        const Text(
+        SizedBox(height: 9),
+        Text(
           'Explore the linking experience before connecting a real payment provider.',
-          style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.6),
+          style: TextStyle(
+            color: AppPalette.of(context).muted,
+            fontSize: 13,
+            height: 1.6,
+          ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         _demoNotice(),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         TextField(
           key: const ValueKey('bank-search'),
           onChanged: (value) => setState(() => _query = value),
           textInputAction: TextInputAction.search,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'Search a demo bank',
             prefixIcon: Icon(Icons.search_rounded),
           ),
         ),
-        const SizedBox(height: 14),
+        SizedBox(height: 14),
         Text(
           _query.trim().isEmpty
               ? '${demoBanks.length} banks in this demo'
               : '${_visibleBanks.length} matching banks',
-          style: const TextStyle(fontSize: 11, color: AppColors.muted),
+          style: TextStyle(fontSize: 11, color: AppPalette.of(context).muted),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         if (_visibleBanks.isEmpty)
           SurfaceCard(
             child: Column(
               children: [
-                const Icon(
+                Icon(
                   Icons.account_balance_outlined,
-                  color: AppColors.muted,
+                  color: AppPalette.of(context).muted,
                   size: 36,
                 ),
-                const SizedBox(height: 12),
-                const Text(
+                SizedBox(height: 12),
+                Text(
                   'No demo bank found',
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 6),
-                const Text(
+                SizedBox(height: 6),
+                Text(
                   'Try another bank name.',
-                  style: TextStyle(fontSize: 12, color: AppColors.muted),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppPalette.of(context).muted,
+                  ),
                 ),
               ],
             ),
@@ -293,9 +300,9 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
             ),
           ),
         if (_selected != null) ...[
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           _selectionSummary(_selected!),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           PrimaryButton(
             key: const ValueKey('bank-continue'),
             label: 'Continue with ${_selected!.name}',
@@ -308,13 +315,17 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
   );
 
   Widget _demoNotice() => SurfaceCard(
-    color: const Color(0xFFF0EDFF),
+    color: AppPalette.of(context).tint(const Color(0xFFF0EDFF)),
     radius: 18,
     padding: const EdgeInsets.all(18),
-    child: const Row(
+    child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.visibility_outlined, color: AppColors.primary, size: 21),
+        Icon(
+          Icons.visibility_outlined,
+          color: AppPalette.of(context).primary,
+          size: 21,
+        ),
         SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -327,7 +338,7 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.55,
-                  color: Color(0xFF665B7D),
+                  color: AppPalette.of(context).muted,
                 ),
               ),
             ],
@@ -340,7 +351,9 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
   Widget _bankOption(DemoBank bank) {
     final selected = _selected?.id == bank.id;
     return Material(
-      color: selected ? const Color(0xFFF8F7FE) : Colors.transparent,
+      color: selected
+          ? AppPalette.of(context).tint(const Color(0xFFF8F7FE))
+          : Colors.transparent,
       child: InkWell(
         key: ValueKey('bank-option-${bank.id}'),
         onTap: () => setState(() => _selected = bank),
@@ -349,29 +362,28 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
           child: Row(
             children: [
               _BankMark(bank: bank, size: 42),
-              const SizedBox(width: 14),
+              SizedBox(width: 14),
               Expanded(
                 child: Text(
                   bank.name,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                 ),
               ),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
                 child: selected
-                    ? const Icon(
+                    ? Icon(
                         Icons.check_circle_rounded,
                         key: ValueKey('selected'),
-                        color: Color(0xFF338767),
+                        color: (AppPalette.of(context).dark
+                            ? const Color(0xFF88DAB9)
+                            : const Color(0xFF338767)),
                         size: 22,
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.chevron_right_rounded,
                         key: ValueKey('unselected'),
-                        color: AppColors.muted,
+                        color: AppPalette.of(context).muted,
                       ),
               ),
             ],
@@ -382,32 +394,32 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
   }
 
   Widget _selectionSummary(DemoBank bank) => SurfaceCard(
-    color: const Color(0xFFFBFBFE),
+    color: AppPalette.of(context).tint(const Color(0xFFFBFBFE)),
     radius: 18,
     padding: const EdgeInsets.all(18),
     child: Row(
       children: [
         _BankMark(bank: bank, size: 42),
-        const SizedBox(width: 13),
+        SizedBox(width: 13),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Selected bank',
-                style: TextStyle(fontSize: 11, color: AppColors.muted),
-              ),
-              const SizedBox(height: 2),
               Text(
-                bank.name,
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                'Selected bank',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppPalette.of(context).muted,
+                ),
               ),
+              SizedBox(height: 2),
+              Text(bank.name, style: TextStyle(fontWeight: FontWeight.w800)),
             ],
           ),
         ),
         TextButton(
           onPressed: () => setState(() => _selected = null),
-          child: const Text('Change'),
+          child: Text('Change'),
         ),
       ],
     ),
@@ -419,17 +431,17 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'ONE LAST LOOK',
             style: TextStyle(
-              color: AppColors.muted,
+              color: AppPalette.of(context).muted,
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.8,
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
+          SizedBox(height: 10),
+          Text(
             'Review your demo account',
             style: TextStyle(
               fontSize: 31,
@@ -438,12 +450,16 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
               letterSpacing: -1.1,
             ),
           ),
-          const SizedBox(height: 9),
-          const Text(
+          SizedBox(height: 9),
+          Text(
             'This is an illustrative account label, not a real bank account.',
-            style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.6),
+            style: TextStyle(
+              color: AppPalette.of(context).muted,
+              fontSize: 13,
+              height: 1.6,
+            ),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           SurfaceCard(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -452,24 +468,24 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
                 Row(
                   children: [
                     _BankMark(bank: bank, size: 52),
-                    const SizedBox(width: 15),
+                    SizedBox(width: 15),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             bank.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
+                          SizedBox(height: 4),
+                          Text(
                             'Savings account · •••• 4821',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.muted,
+                              color: AppPalette.of(context).muted,
                             ),
                           ),
                         ],
@@ -477,16 +493,18 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
                     ),
                   ],
                 ),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 22),
                   child: Divider(),
                 ),
-                const Row(
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.lock_outline_rounded,
-                      color: Color(0xFF338767),
+                      color: (AppPalette.of(context).dark
+                          ? const Color(0xFF88DAB9)
+                          : const Color(0xFF338767)),
                       size: 19,
                     ),
                     SizedBox(width: 10),
@@ -496,7 +514,7 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.6,
-                          color: AppColors.muted,
+                          color: AppPalette.of(context).muted,
                         ),
                       ),
                     ),
@@ -505,7 +523,7 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 22),
+          SizedBox(height: 22),
           PrimaryButton(
             key: const ValueKey('bank-link-confirm'),
             label: 'Link demo account',
@@ -518,7 +536,7 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
           Center(
             child: TextButton(
               onPressed: () => setState(() => _checkingAccount = false),
-              child: const Text('Choose a different bank'),
+              child: Text('Choose a different bank'),
             ),
           ),
         ],
@@ -530,17 +548,17 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'BANK LINK COMPLETE',
           style: TextStyle(
-            color: AppColors.muted,
+            color: AppPalette.of(context).muted,
             fontSize: 10,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.8,
           ),
         ),
-        const SizedBox(height: 10),
-        const Text(
+        SizedBox(height: 10),
+        Text(
           'Your demo bank is linked',
           style: TextStyle(
             fontSize: 31,
@@ -549,15 +567,19 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
             letterSpacing: -1.1,
           ),
         ),
-        const SizedBox(height: 9),
-        const Text(
+        SizedBox(height: 9),
+        Text(
           'You can see this connection on your dashboard and wallet while this preview is open.',
-          style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.6),
+          style: TextStyle(
+            color: AppPalette.of(context).muted,
+            fontSize: 13,
+            height: 1.6,
+          ),
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: 28),
         SurfaceCard(
           key: const ValueKey('bank-linked-card'),
-          color: const Color(0xFFF6FBF8),
+          color: AppPalette.of(context).tint(const Color(0xFFF6FBF8)),
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,17 +590,21 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
                     width: 40,
                     height: 40,
                     alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFDDF6EA),
+                    decoration: BoxDecoration(
+                      color: AppPalette.of(
+                        context,
+                      ).tint(const Color(0xFFDDF6EA)),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.check_rounded,
-                      color: Color(0xFF338767),
+                      color: (AppPalette.of(context).dark
+                          ? const Color(0xFF88DAB9)
+                          : const Color(0xFF338767)),
                     ),
                   ),
-                  const SizedBox(width: 13),
-                  const Expanded(
+                  SizedBox(width: 13),
+                  Expanded(
                     child: Text(
                       'Demo connection active',
                       style: TextStyle(fontWeight: FontWeight.w800),
@@ -586,31 +612,31 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
                   ),
                 ],
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 22),
                 child: Divider(),
               ),
               Row(
                 children: [
                   _LinkedBankMark(bank: bank, size: 52),
-                  const SizedBox(width: 15),
+                  SizedBox(width: 15),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           bank.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           'Savings account · •••• ${bank.lastFour}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.muted,
+                            color: AppPalette.of(context).muted,
                           ),
                         ),
                       ],
@@ -618,15 +644,18 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              const Text(
+              SizedBox(height: 20),
+              Text(
                 'No real bank account or funds are connected in this demo.',
-                style: TextStyle(fontSize: 12, color: AppColors.muted),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppPalette.of(context).muted,
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 22),
+        SizedBox(height: 22),
         PrimaryButton(
           label: 'Back to dashboard',
           icon: Icons.grid_view_rounded,
@@ -636,9 +665,11 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
           child: TextButton.icon(
             key: const ValueKey('bank-unlink'),
             onPressed: () => _askToUnlink(context),
-            icon: const Icon(Icons.link_off_rounded, size: 18),
-            label: const Text('Unlink demo bank'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            icon: Icon(Icons.link_off_rounded, size: 18),
+            label: Text('Unlink demo bank'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppPalette.of(context).danger,
+            ),
           ),
         ),
       ],
@@ -649,19 +680,19 @@ class _BankLinkScreenState extends State<BankLinkScreen> {
     final remove = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Unlink demo bank?'),
-        content: const Text(
+        title: Text('Unlink demo bank?'),
+        content: Text(
           'This removes only the local preview label. No real bank connection exists.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Keep linked'),
+            child: Text('Keep linked'),
           ),
           FilledButton(
             key: const ValueKey('bank-unlink-confirm'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Unlink'),
+            child: Text('Unlink'),
           ),
         ],
       ),
@@ -715,13 +746,13 @@ class _LinkedBankMark extends StatelessWidget {
     height: size,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: AppColors.primaryLight,
+      color: AppPalette.of(context).primaryLight,
       borderRadius: BorderRadius.circular(size * .31),
     ),
     child: Text(
       bank.monogram,
       style: TextStyle(
-        color: AppColors.primary,
+        color: AppPalette.of(context).primary,
         fontSize: size < 48 ? 9 : 10,
         fontWeight: FontWeight.w800,
         letterSpacing: -.4,

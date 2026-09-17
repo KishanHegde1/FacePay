@@ -9,6 +9,7 @@ import 'screens/auth_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/app_shell.dart';
 import 'ui/design.dart';
+import 'services/app_settings.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,7 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
   AppState _state = AppState();
   bool _splash = true, _busy = true;
   bool _authReady = false;
+  final AppSettings _settings = AppSettings();
   String? _error;
   Future<void> Function()? _retry;
   late final AuthService _auth;
@@ -44,6 +46,7 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
   @override
   void initState() {
     super.initState();
+    unawaited(_settings.load());
     unawaited(_restore());
   }
 
@@ -174,6 +177,7 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
 
   @override
   void dispose() {
+    _settings.dispose();
     if (_authReady) {
       _auth.dispose();
     } else {
@@ -184,78 +188,91 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    navigatorKey: _navigatorKey,
-    title: 'FacePay — payments, with a smile',
-    debugShowCheckedModeBanner: false,
-    theme: AppTheme.light,
-    home: _splash
-        ? SplashScreen(
-            onComplete: () {
-              if (mounted) setState(() => _splash = false);
-            },
-          )
-        : _busy
-        ? const Scaffold(body: Center(child: CircularProgressIndicator()))
-        : _error != null
-        ? Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _authReady
-                          ? 'We could not restore your account'
-                          : 'We could not start phone sign-in',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 23,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.ink,
+  Widget build(BuildContext context) => AppSettingsScope(
+    settings: _settings,
+    child: AnimatedBuilder(
+      animation: _settings,
+      builder: (context, _) => MaterialApp(
+        navigatorKey: _navigatorKey,
+        title: 'FacePay — payments, with a smile',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: _settings.themeMode,
+        home: Builder(
+          builder: (context) => _splash
+              ? SplashScreen(
+                  onComplete: () {
+                    if (mounted) setState(() => _splash = false);
+                  },
+                )
+              : _busy
+              ? Scaffold(body: Center(child: CircularProgressIndicator()))
+              : _error != null
+              ? Scaffold(
+                  body: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _authReady
+                                ? 'We could not restore your account'
+                                : 'We could not start phone sign-in',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 23,
+                              fontWeight: FontWeight.w800,
+                              color: AppPalette.of(context).ink,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            _error!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppPalette.of(context).muted,
+                              height: 1.5,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Your saved login is still kept on this device.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppPalette.of(context).muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          FilledButton(
+                            onPressed: _retry,
+                            child: Text('Try again'),
+                          ),
+                          if (_authReady) ...[
+                            SizedBox(height: 8),
+                            TextButton(
+                              onPressed: _useAnotherAccount,
+                              child: Text('Sign in with another account'),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      _error!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Your saved login is still kept on this device.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.muted, fontSize: 12),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: _retry,
-                      child: const Text('Try again'),
-                    ),
-                    if (_authReady) ...[
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: _useAnotherAccount,
-                        child: const Text('Sign in with another account'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          )
-        : _session != null
-        ? AppShell(
-            state: _state,
-            profile: _profile,
-            accessToken: _session!.accessToken,
-            onSaveProfile: _saveProfile,
-            onSignOut: _signOut,
-          )
-        : AuthScreen(authService: _auth, onAuthenticated: _signIn),
+                  ),
+                )
+              : _session != null
+              ? AppShell(
+                  state: _state,
+                  profile: _profile,
+                  accessToken: _session!.accessToken,
+                  onSaveProfile: _saveProfile,
+                  onSignOut: _signOut,
+                )
+              : AuthScreen(authService: _auth, onAuthenticated: _signIn),
+        ),
+      ),
+    ),
   );
 }

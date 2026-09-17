@@ -1,4 +1,4 @@
-# FacePay current status - 15 September 2026
+# FacePay current status - 18 September 2026
 
 ## Implemented updates
 
@@ -13,6 +13,9 @@
 - Home > FACE VERIFICATION > Register Face saves account enrollment metadata through Rust into Neon.
 - Demo payment: enter recipient and amount, review, complete the camera check, explicitly approve, then show local demo activity and a receipt. No money moves.
 
+- Settings from the home header and Profile, with saved System/Light/Dark appearance across app routes.
+- Gallery/camera profile photo selection, removal, metadata removal and encrypted per-profile device storage.
+
 ## Face registration limitations
 
 The database stores a profile ID, a hash of a random app installation identifier, a liveness-method label and timestamps. It stores no face photo, biometric embedding or face template. It cannot identify or match a scanned recipient.
@@ -23,9 +26,9 @@ The registration lookup checks the account, not the current installation identif
 
 - Neon: `facepay.profiles`, `facepay.auth_sessions`, `facepay.face_enrollments`.
 - Firebase: Android phone authentication and Firebase user records.
-- Phone secure storage: FacePay session token and random app identifier.
+- Phone secure storage: FacePay session token, random app identifier and per-profile photo. Appearance is a non-secret device preference.
 - Phone memory: demo bank selection and demo payment activity. Restarting the process or signing out resets these records.
-- C: Git checkout and D: project folder: code, SQL definitions and generated builds, not a local production database.
+- `D:\Face Payment`: active Git checkout, code, SQL definitions and generated builds; no local production database. Older C-drive copies are not used for current updates.
 
 See [data and storage](docs/DATA_AND_STORAGE.md).
 

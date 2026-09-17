@@ -9,3 +9,10 @@
 **/*.jks
 **/*.keystore
 **/key.properties
+
+# Local build review and backup files
+/backups/
+/.idea/
+/.local-review/
+
+/Frontend/flutter/previews/

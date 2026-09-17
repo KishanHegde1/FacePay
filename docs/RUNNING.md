@@ -27,7 +27,7 @@ Set-Location 'D:\Face Payment'
 .\Start-FacePay.ps1 -Mode build
 ```
 
-The APK is at `Frontend/flutter/build/app/outputs/flutter-apk/app-debug.apk`. The check runs Flutter analysis/tests and Rust formatting/tests. This is a debug build; release signing remains a separate setup step. The synchronization adds no package dependency.
+The APK is at `Frontend/flutter/build/app/outputs/flutter-apk/app-debug.apk`. The check runs Flutter analysis/tests and Rust formatting/tests. This is a debug build; release signing remains a separate setup step. Profile photo selection uses `image_picker`; run `flutter pub get` after pulling updates.
 
 ## Optional local Rust API
 
@@ -53,8 +53,14 @@ Production Render keeps `AUTH_TEST_ENABLED=false` and uses Render's assigned por
 ## Common problems
 
 - **No pubspec.yaml:** use `Frontend/flutter` or the root run script.
-- **Not a Git repository:** D is a source copy. Use the publishing checkout named in the root README for Git commands.
+- **Not a Git repository:** run Git commands from `D:\Face Payment`, the active Git working folder.
 - **Missing packages:** run `flutter pub get` in the Flutter folder.
 - **Restore timeout:** check internet/Render availability; temporary errors retain the saved token.
 - **SQL database guard failure:** use the full `neon_setup.sql` transaction or let backend startup run migrations.
 - **Scripts blocked by local policy:** use the direct Flutter commands above, without changing machine-wide policy.
+
+## Appearance and profile photos
+
+Tap the gear in the home header or **Profile > Settings**. Choose **System**, **Light** or **Dark**; the choice is saved on this device. System follows the phone appearance setting. The splash artwork and camera screen retain their dedicated dark presentation.
+
+Open **Profile > Add photo** to choose a gallery image or take a photo. After saving, use **Change photo** to replace or remove it. Photos are resized and stored in encrypted device storage separately for each signed-in profile. They are not uploaded to Neon and are not face-registration templates. Allow camera/photo access when requested; cancellation leaves the previous photo unchanged.

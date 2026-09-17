@@ -56,31 +56,34 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'YOUR MONEY, IN MOTION',
                       style: TextStyle(
-                        color: AppColors.muted,
+                        color: AppPalette.of(context).muted,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.6,
                       ),
                     ),
-                    const SizedBox(height: 9),
-                    const Text(
+                    SizedBox(height: 9),
+                    Text(
                       'Activity',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -1.1,
-                        color: AppColors.ink,
+                        color: AppPalette.of(context).ink,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       'Local demo activity is labelled clearly below. Verified transaction details will appear after payment services are connected.',
-                      style: TextStyle(color: AppColors.muted, height: 1.5),
+                      style: TextStyle(
+                        color: AppPalette.of(context).muted,
+                        height: 1.5,
+                      ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28),
                     SurfaceCard(
                       padding: const EdgeInsets.all(18),
                       child: Column(
@@ -91,9 +94,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
                             onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
                               hintText: 'Search transactions or references',
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.search_rounded,
-                                color: AppColors.muted,
+                                color: AppPalette.of(context).muted,
                               ),
                               suffixIcon: query.isEmpty
                                   ? null
@@ -101,13 +104,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
                                       tooltip: 'Clear search',
                                       onPressed: () =>
                                           setState(_searchController.clear),
-                                      icon: const Icon(
-                                        Icons.close_rounded,
-                                        size: 19,
-                                      ),
+                                      icon: Icon(Icons.close_rounded, size: 19),
                                     ),
                               filled: true,
-                              fillColor: AppColors.background,
+                              fillColor: AppPalette.of(context).background,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
                                 borderSide: BorderSide.none,
@@ -118,7 +118,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -131,18 +131,20 @@ class _ActivityScreenState extends State<ActivityScreen> {
                                     onSelected: (_) =>
                                         setState(() => _filter = filter),
                                     selectedColor: AppColors.primary,
-                                    backgroundColor: AppColors.surface,
+                                    backgroundColor: AppPalette.of(
+                                      context,
+                                    ).surface,
                                     side: BorderSide(
                                       color: _filter == filter
-                                          ? AppColors.primary
-                                          : AppColors.border,
+                                          ? AppPalette.of(context).primary
+                                          : AppPalette.of(context).border,
                                     ),
                                     labelStyle: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       color: _filter == filter
                                           ? Colors.white
-                                          : AppColors.muted,
+                                          : AppPalette.of(context).muted,
                                     ),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 13,
@@ -158,42 +160,42 @@ class _ActivityScreenState extends State<ActivityScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 25),
+                    SizedBox(height: 25),
                     if (transactions.isEmpty)
                       SurfaceCard(
                         child: SizedBox(
                           width: double.infinity,
                           child: Column(
                             children: [
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24),
                               Container(
                                 width: 68,
                                 height: 68,
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.primaryLight,
+                                  color: AppPalette.of(context).primaryLight,
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.search_off_rounded,
                                   size: 31,
-                                  color: AppColors.primary,
+                                  color: AppPalette.of(context).primary,
                                 ),
                               ),
-                              const SizedBox(height: 20),
-                              const Text(
+                              SizedBox(height: 20),
+                              Text(
                                 'Nothing here just yet',
                                 style: TextStyle(
                                   fontSize: 19,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               Text(
                                 query.isNotEmpty || _filter != 'All'
                                     ? 'Try a different search or view all transactions.'
                                     : 'There is no demo payment activity yet.',
-                                style: const TextStyle(
-                                  color: AppColors.muted,
+                                style: TextStyle(
+                                  color: AppPalette.of(context).muted,
                                   height: 1.5,
                                 ),
                                 textAlign: TextAlign.center,
@@ -204,9 +206,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
                                     _filter = 'All';
                                     _searchController.clear();
                                   }),
-                                  child: const Text('Clear filters'),
+                                  child: Text('Clear filters'),
                                 ),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24),
                             ],
                           ),
                         ),
@@ -226,8 +228,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
                                 children: [
                                   Text(
                                     group.key,
-                                    style: const TextStyle(
-                                      color: AppColors.muted,
+                                    style: TextStyle(
+                                      color: AppPalette.of(context).muted,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -235,8 +237,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
                                   const Spacer(),
                                   Text(
                                     '${group.value.length} ${group.value.length == 1 ? 'payment' : 'payments'}',
-                                    style: const TextStyle(
-                                      color: AppColors.muted,
+                                    style: TextStyle(
+                                      color: AppPalette.of(context).muted,
                                       fontSize: 11,
                                     ),
                                   ),
@@ -256,9 +258,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
                                     index++
                                   ) ...[
                                     if (index != 0)
-                                      const Divider(
+                                      Divider(
                                         height: 1,
-                                        color: AppColors.border,
+                                        color: AppPalette.of(context).border,
                                       ),
                                     _TransactionRow(
                                       transaction: group.value[index],
@@ -275,7 +277,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                         ),
                       ),
                     ),
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 2, bottom: 20),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -283,14 +285,14 @@ class _ActivityScreenState extends State<ActivityScreen> {
                           Icon(
                             Icons.lock_outline_rounded,
                             size: 13,
-                            color: AppColors.muted,
+                            color: AppPalette.of(context).muted,
                           ),
                           SizedBox(width: 6),
                           Text(
                             'Transaction history',
                             style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.muted,
+                              color: AppPalette.of(context).muted,
                             ),
                           ),
                         ],
@@ -311,7 +313,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppPalette.of(context).surface,
       constraints: const BoxConstraints(maxWidth: 560),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
@@ -326,16 +328,18 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: AppColors.mint,
+                  color: AppPalette.of(context).mint,
                   borderRadius: BorderRadius.circular(22),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.check_rounded,
-                  color: Color(0xFF21806C),
+                  color: (AppPalette.of(context).dark
+                      ? const Color(0xFF88DAB9)
+                      : const Color(0xFF21806C)),
                   size: 34,
                 ),
               ),
-              const SizedBox(height: 18),
+              SizedBox(height: 18),
               Text(
                 transaction.isDemo
                     ? 'Demo payment recorded'
@@ -343,34 +347,37 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 style: TextStyle(
                   fontSize: 23,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.ink,
+                  color: AppPalette.of(context).ink,
                   letterSpacing: -.5,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 transaction.isDemo
                     ? 'No money moved · local preview only'
                     : transaction.incoming
                     ? 'Received payment'
                     : 'Sent payment',
-                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                style: TextStyle(
+                  color: AppPalette.of(context).muted,
+                  fontSize: 13,
+                ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               FittedBox(
                 child: Text(
                   '${transaction.incoming ? '+' : '−'}${formatMoney(transaction.amount)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 38,
-                    color: AppColors.ink,
+                    color: AppPalette.of(context).ink,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -1.5,
                   ),
                 ),
               ),
-              const SizedBox(height: 25),
+              SizedBox(height: 25),
               SurfaceCard(
-                color: AppColors.background,
+                color: AppPalette.of(context).background,
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
@@ -395,18 +402,21 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               PrimaryButton(
                 label: 'Done',
                 onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 transaction.isDemo
                     ? 'This demo item is kept only while the app is open. No money moved.'
                     : 'Transaction details are shown after verified payment activity is available.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted, fontSize: 11),
+                style: TextStyle(
+                  color: AppPalette.of(context).muted,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),
@@ -443,19 +453,21 @@ class _TransactionRow extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: transaction.incoming
-                    ? AppColors.mint
-                    : AppColors.primaryLight,
+                    ? AppPalette.of(context).mint
+                    : AppPalette.of(context).primaryLight,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 icon,
                 size: 22,
                 color: transaction.incoming
-                    ? const Color(0xFF21806C)
-                    : AppColors.primary,
+                    ? (AppPalette.of(context).dark
+                          ? const Color(0xFF88DAB9)
+                          : const Color(0xFF21806C))
+                    : AppPalette.of(context).primary,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,18 +476,20 @@ class _TransactionRow extends StatelessWidget {
                     transaction.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
+                      color: AppPalette.of(context).ink,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   if (transaction.isDemo)
-                    const Text(
+                    Text(
                       'DEMO · NO MONEY MOVED',
                       style: TextStyle(
-                        color: Color(0xFF9A6500),
+                        color: (AppPalette.of(context).dark
+                            ? const Color(0xFFFFD58A)
+                            : const Color(0xFF9A6500)),
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
                         letterSpacing: .35,
@@ -486,15 +500,15 @@ class _TransactionRow extends StatelessWidget {
                       transaction.subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.muted,
+                        color: AppPalette.of(context).muted,
                       ),
                     ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -504,14 +518,19 @@ class _TransactionRow extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: transaction.incoming
-                        ? const Color(0xFF21806C)
-                        : AppColors.ink,
+                        ? (AppPalette.of(context).dark
+                              ? const Color(0xFF88DAB9)
+                              : const Color(0xFF21806C))
+                        : AppPalette.of(context).ink,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Text(
                   _time(transaction.date),
-                  style: const TextStyle(color: AppColors.muted, fontSize: 10),
+                  style: TextStyle(
+                    color: AppPalette.of(context).muted,
+                    fontSize: 10,
+                  ),
                 ),
               ],
             ),
@@ -536,16 +555,16 @@ class _ReceiptLine extends StatelessWidget {
           width: 82,
           child: Text(
             label,
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: TextStyle(color: AppPalette.of(context).muted, fontSize: 12),
           ),
         ),
         Expanded(
           child: Text(
             value,
             textAlign: TextAlign.end,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: AppColors.ink,
+              color: AppPalette.of(context).ink,
               fontSize: 12,
               height: 1.4,
             ),

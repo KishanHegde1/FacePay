@@ -96,7 +96,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
     final account = _account;
     final result = _result;
     return Scaffold(
-      appBar: AppBar(title: const Text('Account balance')),
+      appBar: AppBar(title: Text('Account balance')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
@@ -107,19 +107,19 @@ class _BalanceScreenState extends State<BalanceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.account_balance_outlined,
-                      color: AppColors.primary,
+                      color: AppPalette.of(context).primary,
                       size: 34,
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     Text(
                       account == null
                           ? 'No bank account selected'
                           : 'Selected bank account',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     if (account != null) ...[
                       Text(
                         account.bankName,
@@ -127,22 +127,22 @@ class _BalanceScreenState extends State<BalanceScreen> {
                       ),
                       Text(account.maskedAccount),
                       if (account.isPreview) ...[
-                        const SizedBox(height: 12),
-                        const Text(
+                        SizedBox(height: 12),
+                        Text(
                           'Local bank preview only. This is not a connected bank account.',
-                          style: TextStyle(color: AppColors.muted),
+                          style: TextStyle(color: AppPalette.of(context).muted),
                         ),
                       ],
                     ] else
-                      const Text(
+                      Text(
                         'Select a bank from your wallet. Real account linking requires a payment provider.',
-                        style: TextStyle(color: AppColors.muted),
+                        style: TextStyle(color: AppPalette.of(context).muted),
                       ),
                     if (widget.onManageAccount != null) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       TextButton.icon(
                         onPressed: widget.onManageAccount,
-                        icon: const Icon(Icons.tune_rounded),
+                        icon: Icon(Icons.tune_rounded),
                         label: Text(
                           account == null
                               ? 'Choose bank'
@@ -153,9 +153,9 @@ class _BalanceScreenState extends State<BalanceScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 22),
+              SizedBox(height: 22),
               SurfaceCard(
-                color: AppColors.primaryLight,
+                color: AppPalette.of(context).primaryLight,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -165,7 +165,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                           : 'Bank balance unavailable',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     if (result is BankBalanceAvailable) ...[
                       Text(
                         '${result.currency} ${(result.minorUnits / math.pow(10, result.fractionDigits)).toStringAsFixed(result.fractionDigits)}',
@@ -174,18 +174,18 @@ class _BalanceScreenState extends State<BalanceScreen> {
                       ),
                       Text('Updated: ${result.fetchedAt.toLocal()}'),
                     ] else
-                      const Text(
+                      Text(
                         'Real bank balance fetching becomes available only after the payment provider is connected.',
                       ),
                     if (result is BankBalanceUnavailable) ...[
-                      const SizedBox(height: 12),
-                      const Text(
+                      SizedBox(height: 12),
+                      Text(
                         'No balance was fetched. The payment provider is not connected yet.',
                         key: ValueKey('balance-unavailable-result'),
                       ),
                     ],
                     if (_error != null) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Text(
                         _error!,
                         style: TextStyle(
@@ -196,7 +196,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               PrimaryButton(
                 label: _loading
                     ? 'Fetching balance…'

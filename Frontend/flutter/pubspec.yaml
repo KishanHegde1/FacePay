@@ -18,6 +18,7 @@ dependencies:
   google_mlkit_image_labeling: ^0.16.1
   firebase_core: ^4.15.0
   firebase_auth: ^6.7.0
+  image_picker: ^1.2.3
 
 dev_dependencies:
   flutter_test:

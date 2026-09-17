@@ -120,7 +120,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppPalette.of(context).background,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -141,19 +141,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
           tooltip: 'Back',
           onPressed: _leave,
           style: IconButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: AppColors.ink,
+            backgroundColor: AppPalette.of(context).surface,
+            foregroundColor: AppPalette.of(context).ink,
           ),
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.arrow_back_rounded),
         ),
         Expanded(
           child: Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
           ),
         ),
-        const SizedBox(width: 48),
+        SizedBox(width: 48),
       ],
     );
   }
@@ -164,43 +164,47 @@ class _PaymentScreenState extends State<PaymentScreen> {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       children: [
         _topBar('Demo payment'),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         const _DemoPill(),
-        const SizedBox(height: 16),
-        const Text(
+        SizedBox(height: 16),
+        Text(
           'Try the payment flow',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w800,
             letterSpacing: -1,
-            color: AppColors.ink,
+            color: AppPalette.of(context).ink,
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
+        SizedBox(height: 8),
+        Text(
           'This records local demo activity only. No money moves, no real bank balance changes, and no details are sent to a bank.',
-          style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.55),
+          style: TextStyle(
+            color: AppPalette.of(context).muted,
+            fontSize: 13,
+            height: 1.55,
+          ),
         ),
-        const SizedBox(height: 22),
+        SizedBox(height: 22),
         _BankPanel(bank: bank, onLinkBank: widget.onLinkBank),
-        const SizedBox(height: 18),
+        SizedBox(height: 18),
         Form(
           key: _formKey,
           child: SurfaceCard(
-            color: AppColors.surface,
+            color: AppPalette.of(context).surface,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Demo details',
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 TextFormField(
                   key: const ValueKey('demo-payment-recipient'),
                   controller: _recipientController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Recipient name',
                     hintText: 'Enter a name for this demo',
                     prefixIcon: Icon(Icons.person_outline_rounded),
@@ -209,14 +213,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ? 'Enter a recipient name.'
                       : null,
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 TextFormField(
                   key: const ValueKey('demo-payment-amount'),
                   controller: _amountController,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Demo amount',
                     hintText: '0.00',
                     prefixText: '₹ ',
@@ -239,7 +243,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         PrimaryButton(
           label: bank == null
               ? 'Link demo bank first'
@@ -268,24 +272,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       children: [
         _topBar('Demo payment'),
-        const SizedBox(height: 54),
+        SizedBox(height: 54),
         Center(
           child: Container(
             width: 86,
             height: 86,
-            decoration: const BoxDecoration(
-              color: AppColors.mint,
+            decoration: BoxDecoration(
+              color: AppPalette.of(context).mint,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_rounded,
-              color: Color(0xFF21806C),
+              color: (AppPalette.of(context).dark
+                  ? const Color(0xFF88DAB9)
+                  : const Color(0xFF21806C)),
               size: 44,
             ),
           ),
         ),
-        const SizedBox(height: 22),
-        const Text(
+        SizedBox(height: 22),
+        Text(
           'Demo payment recorded',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -294,15 +300,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
             letterSpacing: -1,
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
+        SizedBox(height: 8),
+        Text(
           'No money moved. This local preview is visible only while the app is open.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.55),
+          style: TextStyle(
+            color: AppPalette.of(context).muted,
+            fontSize: 13,
+            height: 1.55,
+          ),
         ),
-        const SizedBox(height: 26),
+        SizedBox(height: 26),
         SurfaceCard(
-          color: AppColors.surface,
+          color: AppPalette.of(context).surface,
           child: Column(
             children: [
               _ReceiptLine('Recipient', payment.title),
@@ -313,14 +323,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         PrimaryButton(
           label: 'Create another demo',
           icon: Icons.add_rounded,
           onPressed: _startAnother,
         ),
-        const SizedBox(height: 12),
-        TextButton(onPressed: _leave, child: const Text('Back to home')),
+        SizedBox(height: 12),
+        TextButton(onPressed: _leave, child: Text('Back to home')),
       ],
     );
   }
@@ -336,13 +346,15 @@ class _DemoPill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Color(0xFFFFF4DA),
+          color: AppPalette.of(context).tint(const Color(0xFFFFF4DA)),
           borderRadius: BorderRadius.circular(100),
         ),
-        child: const Text(
+        child: Text(
           'DEMO MODE · NO MONEY MOVES',
           style: TextStyle(
-            color: Color(0xFF9A6500),
+            color: (AppPalette.of(context).dark
+                ? const Color(0xFFFFD58A)
+                : const Color(0xFF9A6500)),
             fontWeight: FontWeight.w800,
             fontSize: 10,
             letterSpacing: .45,
@@ -362,30 +374,36 @@ class _BankPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SurfaceCard(
-      color: bank == null ? const Color(0xFFFFF4DA) : AppColors.primaryLight,
+      color: bank == null
+          ? AppPalette.of(context).tint(const Color(0xFFFFF4DA))
+          : AppPalette.of(context).primaryLight,
       child: Row(
         children: [
           Icon(
             bank == null
                 ? Icons.info_outline_rounded
                 : Icons.account_balance_outlined,
-            color: bank == null ? const Color(0xFF9A6500) : AppColors.primary,
+            color: bank == null
+                ? (AppPalette.of(context).dark
+                      ? const Color(0xFFFFD58A)
+                      : const Color(0xFF9A6500))
+                : AppPalette.of(context).primary,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Text(
               bank == null
                   ? 'Link a demo bank account to continue. It is a local label only, not a bank connection.'
                   : 'Using local demo bank: ${bank!.name} · •••• ${bank!.lastFour}',
-              style: const TextStyle(
-                color: AppColors.ink,
+              style: TextStyle(
+                color: AppPalette.of(context).ink,
                 fontSize: 12,
                 height: 1.45,
               ),
             ),
           ),
           if (bank == null && onLinkBank != null)
-            TextButton(onPressed: onLinkBank, child: const Text('Link')),
+            TextButton(onPressed: onLinkBank, child: Text('Link')),
         ],
       ),
     );
@@ -411,7 +429,7 @@ class _DemoPaymentReviewSheet extends StatelessWidget {
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.fromLTRB(22, 18, 22, 22),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppPalette.of(context).surface,
           borderRadius: BorderRadius.circular(28),
         ),
         child: Column(
@@ -419,36 +437,36 @@ class _DemoPaymentReviewSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const _DemoPill(),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'Review demo payment',
               style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _ReceiptLine('Recipient', recipient),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _ReceiptLine('Demo amount', formatMoney(amount)),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _ReceiptLine('Demo bank', '${bank.name} · •••• ${bank.lastFour}'),
-            const SizedBox(height: 18),
-            const Text(
+            SizedBox(height: 18),
+            Text(
               'This only saves demo activity while the app remains open. No money moves, no balance changes, and no bank receives these details.',
               style: TextStyle(
-                color: AppColors.muted,
+                color: AppPalette.of(context).muted,
                 fontSize: 12,
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             PrimaryButton(
               label: 'Continue to face check',
               icon: Icons.face_retouching_natural,
               onPressed: () => Navigator.of(context).pop(true),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
           ],
         ),
@@ -470,15 +488,15 @@ class _ReceiptLine extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: TextStyle(color: AppPalette.of(context).muted, fontSize: 12),
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Flexible(
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
           ),
         ),
       ],

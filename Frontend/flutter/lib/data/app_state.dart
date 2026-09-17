@@ -56,6 +56,13 @@ class DemoLinkedBank {
 /// In-memory presentation state. Payment data starts empty until a real payment
 /// provider is connected.
 class AppState extends ChangeNotifier {
+  Uint8List? profilePhoto;
+
+  void setProfilePhoto(Uint8List? value) {
+    profilePhoto = value;
+    notifyListeners();
+  }
+
   String displayName = '';
   String email = '';
   double balance = 0;

@@ -14,7 +14,7 @@ class ReceiveScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bank = state.linkedBank;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppPalette.of(context).background,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -28,12 +28,12 @@ class ReceiveScreen extends StatelessWidget {
                       tooltip: 'Back',
                       onPressed: () => Navigator.of(context).maybePop(),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.ink,
+                        backgroundColor: AppPalette.of(context).surface,
+                        foregroundColor: AppPalette.of(context).ink,
                       ),
-                      icon: const Icon(Icons.arrow_back_rounded),
+                      icon: Icon(Icons.arrow_back_rounded),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Receive money',
                         textAlign: TextAlign.center,
@@ -43,27 +43,29 @@ class ReceiveScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 48),
+                    SizedBox(width: 48),
                   ],
                 ),
-                const SizedBox(height: 48),
+                SizedBox(height: 48),
                 Center(
                   child: Container(
                     width: 84,
                     height: 84,
-                    decoration: const BoxDecoration(
-                      color: AppColors.mint,
+                    decoration: BoxDecoration(
+                      color: AppPalette.of(context).mint,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.qr_code_rounded,
                       size: 42,
-                      color: Color(0xFF278566),
+                      color: (AppPalette.of(context).dark
+                          ? const Color(0xFF88DAB9)
+                          : const Color(0xFF278566)),
                     ),
                   ),
                 ),
-                const SizedBox(height: 26),
-                const Text(
+                SizedBox(height: 26),
+                Text(
                   'Receiving is being set up',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -71,36 +73,36 @@ class ReceiveScreen extends StatelessWidget {
                     height: 1.2,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -1,
-                    color: AppColors.ink,
+                    color: AppPalette.of(context).ink,
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Text(
+                SizedBox(height: 12),
+                Text(
                   'A payment provider is required before FacePay can create a payment ID, QR code, request, or amount. Nothing is shared from this screen today.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.muted,
+                    color: AppPalette.of(context).muted,
                     fontSize: 13,
                     height: 1.6,
                   ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: 28),
                 SurfaceCard(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.lock_outline_rounded,
-                        color: AppColors.primary,
+                        color: AppPalette.of(context).primary,
                       ),
-                      const SizedBox(width: 13),
+                      SizedBox(width: 13),
                       Expanded(
                         child: Text(
                           bank == null
                               ? 'No payment account is connected, so there is nothing to receive into yet.'
                               : '${bank.name} remains a local bank-directory preview and cannot receive payments.',
-                          style: const TextStyle(
-                            color: AppColors.muted,
+                          style: TextStyle(
+                            color: AppPalette.of(context).muted,
                             fontSize: 12,
                             height: 1.6,
                           ),

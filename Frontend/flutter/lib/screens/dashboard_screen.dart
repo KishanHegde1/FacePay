@@ -43,16 +43,16 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'A LITTLE MORE EVERYDAY',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.8,
-                    color: AppColors.muted,
+                    color: AppPalette.of(context).muted,
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text(
                   'Hello, $firstName.',
                   style: TextStyle(
@@ -62,66 +62,72 @@ class DashboardScreen extends StatelessWidget {
                     letterSpacing: -1.3,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   'Your account is ready for the next step.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 13),
+                  style: TextStyle(
+                    color: AppPalette.of(context).muted,
+                    fontSize: 13,
+                  ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: 28),
                 if (wide)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(flex: 6, child: _paymentSetupCard()),
-                      const SizedBox(width: 22),
-                      Expanded(flex: 5, child: _faceCard()),
+                      Expanded(flex: 6, child: _paymentSetupCard(context)),
+                      SizedBox(width: 22),
+                      Expanded(flex: 5, child: _faceCard(context)),
                     ],
                   )
                 else
-                  _paymentSetupCard(),
-                const SizedBox(height: 26),
-                _quickActions(),
-                const SizedBox(height: 26),
-                _bankLinkCard(),
-                const SizedBox(height: 26),
+                  _paymentSetupCard(context),
+                SizedBox(height: 26),
+                _quickActions(context),
+                SizedBox(height: 26),
+                _bankLinkCard(context),
+                SizedBox(height: 26),
                 if (!wide) ...[
-                  _faceCard(compact: true),
-                  const SizedBox(height: 26),
+                  _faceCard(context, compact: true),
+                  SizedBox(height: 26),
                 ],
                 if (wide)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(flex: 6, child: _recentActivity()),
-                      const SizedBox(width: 22),
+                      Expanded(flex: 6, child: _recentActivity(context)),
+                      SizedBox(width: 22),
                       Expanded(
                         flex: 5,
                         child: Column(
                           children: [
-                            _contactsSetup(),
-                            const SizedBox(height: 22),
-                            _activityInsights(),
+                            _contactsSetup(context),
+                            SizedBox(height: 22),
+                            _activityInsights(context),
                           ],
                         ),
                       ),
                     ],
                   )
                 else ...[
-                  _contactsSetup(),
-                  const SizedBox(height: 22),
-                  _recentActivity(),
-                  const SizedBox(height: 22),
-                  _activityInsights(),
+                  _contactsSetup(context),
+                  SizedBox(height: 22),
+                  _recentActivity(context),
+                  SizedBox(height: 22),
+                  _activityInsights(context),
                 ],
-                const SizedBox(height: 24),
-                const Center(
+                SizedBox(height: 24),
+                Center(
                   child: Text(
                     'Made for the moments that matter.  ·  FacePay',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 11, color: AppColors.muted),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppPalette.of(context).muted,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
               ],
             ),
           ),
@@ -130,7 +136,7 @@ class DashboardScreen extends StatelessWidget {
     },
   );
 
-  Widget _paymentSetupCard() => Container(
+  Widget _paymentSetupCard(BuildContext context) => Container(
     width: double.infinity,
     decoration: BoxDecoration(
       gradient: const LinearGradient(
@@ -165,7 +171,7 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
                   Expanded(
                     child: Text(
@@ -180,8 +186,8 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              const Text(
+              SizedBox(height: 24),
+              Text(
                 'Ready for setup',
                 style: TextStyle(
                   color: Colors.white,
@@ -190,8 +196,8 @@ class DashboardScreen extends StatelessWidget {
                   letterSpacing: -1.2,
                 ),
               ),
-              const SizedBox(height: 10),
-              const Text(
+              SizedBox(height: 10),
+              Text(
                 'No real balance or payment method is connected. You can try a local demo payment.',
                 style: TextStyle(
                   color: Color(0xFFCCC5DF),
@@ -199,7 +205,7 @@ class DashboardScreen extends StatelessWidget {
                   height: 1.55,
                 ),
               ),
-              const SizedBox(height: 26),
+              SizedBox(height: 26),
               Row(
                 children: [
                   Expanded(
@@ -213,14 +219,14 @@ class DashboardScreen extends StatelessWidget {
                           vertical: 16,
                         ),
                       ),
-                      icon: const Icon(Icons.tune_rounded, size: 18),
-                      label: const Text(
+                      icon: Icon(Icons.tune_rounded, size: 18),
+                      label: Text(
                         'Wallet setup',
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: TextButton.icon(
                       onPressed: onActivity,
@@ -231,11 +237,8 @@ class DashboardScreen extends StatelessWidget {
                           vertical: 16,
                         ),
                       ),
-                      icon: const Icon(Icons.receipt_long_outlined, size: 16),
-                      label: const Text(
-                        'Activity',
-                        style: TextStyle(fontSize: 12),
-                      ),
+                      icon: Icon(Icons.receipt_long_outlined, size: 16),
+                      label: Text('Activity', style: TextStyle(fontSize: 12)),
                     ),
                   ),
                 ],
@@ -247,11 +250,11 @@ class DashboardScreen extends StatelessWidget {
     ),
   );
 
-  Widget _faceCard({bool compact = false}) => Container(
+  Widget _faceCard(BuildContext context, {bool compact = false}) => Container(
     width: double.infinity,
     padding: const EdgeInsets.all(26),
     decoration: BoxDecoration(
-      color: const Color(0xFFEBE7FA),
+      color: AppPalette.of(context).tint(const Color(0xFFEBE7FA)),
       borderRadius: BorderRadius.circular(24),
     ),
     child: Row(
@@ -260,16 +263,16 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'FACE VERIFICATION',
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.1,
-                  color: Color(0xFF756295),
+                  color: AppPalette.of(context).muted,
                 ),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
               Text(
                 'A familiar face.\nA safer flow.',
                 style: TextStyle(
@@ -277,10 +280,10 @@ class DashboardScreen extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   height: 1.18,
                   letterSpacing: -.9,
-                  color: const Color(0xFF392953),
+                  color: AppPalette.of(context).ink,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               if (!compact)
                 Text(
                   state.faceRegistered
@@ -289,33 +292,35 @@ class DashboardScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.6,
-                    color: Color(0xFF75658E),
+                    color: AppPalette.of(context).muted,
                   ),
                 ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               TextButton(
                 onPressed: onRegisterFace,
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   alignment: Alignment.centerLeft,
-                  foregroundColor: const Color(0xFF5840A6),
+                  foregroundColor: Theme.of(context).colorScheme.primary,
                 ),
                 child: Text(
-                  state.faceRegistered ? 'Face registered  →' : 'Register Face  →',
+                  state.faceRegistered
+                      ? 'Face registered  →'
+                      : 'Register Face  →',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Container(
           width: compact ? 68 : 82,
           height: compact ? 82 : 106,
           decoration: BoxDecoration(
             color: const Color(0xFFB6A2E2),
             borderRadius: BorderRadius.circular(24),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
                 color: Color(0x227B59BF),
                 blurRadius: 28,
@@ -329,10 +334,15 @@ class DashboardScreen extends StatelessWidget {
     ),
   );
 
-  Widget _quickActions() => LayoutBuilder(
+  Widget _quickActions(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final actions = [
-        ('Send', Icons.north_east_rounded, const Color(0xFFF0EDFF), onSend),
+        (
+          'Send',
+          Icons.north_east_rounded,
+          AppPalette.of(context).tint(const Color(0xFFF0EDFF)),
+          onSend,
+        ),
         (
           'Receive',
           Icons.south_west_rounded,
@@ -375,10 +385,10 @@ class DashboardScreen extends StatelessWidget {
                 child: SizedBox(
                   width: actionWidth,
                   child: Material(
-                    color: Colors.white,
+                    color: AppPalette.of(context).surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
-                      side: const BorderSide(color: AppColors.border),
+                      side: BorderSide(color: AppPalette.of(context).border),
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
@@ -394,20 +404,20 @@ class DashboardScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: action.$3,
+                                color: AppPalette.of(context).tint(action.$3),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Icon(
                                 action.$2,
                                 size: 22,
-                                color: AppColors.ink,
+                                color: AppPalette.of(context).ink,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             Text(
                               action.$1,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -425,7 +435,7 @@ class DashboardScreen extends StatelessWidget {
     },
   );
 
-  Widget _bankLinkCard() {
+  Widget _bankLinkCard(BuildContext context) {
     final bank = state.linkedBank;
     final linked = bank != null;
     final content = Row(
@@ -436,42 +446,43 @@ class DashboardScreen extends StatelessWidget {
           height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: linked ? const Color(0xFFDDF6EA) : AppColors.primaryLight,
+            color: linked
+                ? AppPalette.of(context).tint(const Color(0xFFDDF6EA))
+                : AppPalette.of(context).primaryLight,
             borderRadius: BorderRadius.circular(15),
           ),
           child: linked
               ? Text(
                   bank.monogram,
-                  style: const TextStyle(
-                    color: Color(0xFF338767),
+                  style: TextStyle(
+                    color: (AppPalette.of(context).dark
+                        ? const Color(0xFF88DAB9)
+                        : const Color(0xFF338767)),
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                   ),
                 )
-              : const Icon(
+              : Icon(
                   Icons.account_balance_outlined,
-                  color: AppColors.primary,
+                  color: AppPalette.of(context).primary,
                 ),
         ),
-        const SizedBox(width: 15),
+        SizedBox(width: 15),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 linked ? bank.name : 'Link a bank account',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 linked
                     ? 'Demo account · •••• ${bank.lastFour}'
                     : 'Explore 20 popular banks in a safe demo flow.',
-                style: const TextStyle(
-                  color: AppColors.muted,
+                style: TextStyle(
+                  color: AppPalette.of(context).muted,
                   fontSize: 12,
                   height: 1.45,
                 ),
@@ -483,7 +494,9 @@ class DashboardScreen extends StatelessWidget {
     );
     return SurfaceCard(
       key: const ValueKey('bank-dashboard-card'),
-      color: linked ? const Color(0xFFF6FBF8) : AppColors.surface,
+      color: linked
+          ? AppPalette.of(context).tint(const Color(0xFFF6FBF8))
+          : AppPalette.of(context).surface,
       radius: 20,
       padding: const EdgeInsets.all(18),
       child: LayoutBuilder(
@@ -492,7 +505,7 @@ class DashboardScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   content,
-                  const SizedBox(height: 15),
+                  SizedBox(height: 15),
                   OutlinedButton.icon(
                     key: const ValueKey('bank-link-cta'),
                     onPressed: onLinkBank,
@@ -507,7 +520,7 @@ class DashboardScreen extends StatelessWidget {
             : Row(
                 children: [
                   Expanded(child: content),
-                  const SizedBox(width: 20),
+                  SizedBox(width: 20),
                   OutlinedButton.icon(
                     key: const ValueKey('bank-link-cta'),
                     onPressed: onLinkBank,
@@ -523,11 +536,11 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _contactsSetup() => SurfaceCard(
+  Widget _contactsSetup(BuildContext context) => SurfaceCard(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Contacts',
           style: TextStyle(
             fontSize: 17,
@@ -535,28 +548,35 @@ class DashboardScreen extends StatelessWidget {
             letterSpacing: -.4,
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
+        SizedBox(height: 8),
+        Text(
           'No contacts are added yet. Contacts will be available once payments are connected.',
-          style: TextStyle(fontSize: 12, color: AppColors.muted, height: 1.5),
+          style: TextStyle(
+            fontSize: 12,
+            color: AppPalette.of(context).muted,
+            height: 1.5,
+          ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: AppColors.background,
+            color: AppPalette.of(context).background,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.people_outline_rounded, color: AppColors.primary),
+              Icon(
+                Icons.people_outline_rounded,
+                color: AppPalette.of(context).primary,
+              ),
               SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Your contacts will stay empty until you add them through a connected payment service.',
                   style: TextStyle(
-                    color: AppColors.muted,
+                    color: AppPalette.of(context).muted,
                     fontSize: 11,
                     height: 1.5,
                   ),
@@ -569,13 +589,13 @@ class DashboardScreen extends StatelessWidget {
     ),
   );
 
-  Widget _recentActivity() => SurfaceCard(
+  Widget _recentActivity(BuildContext context) => SurfaceCard(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 'Recent activity',
                 style: TextStyle(
@@ -587,23 +607,26 @@ class DashboardScreen extends StatelessWidget {
             ),
             TextButton(
               onPressed: onActivity,
-              child: const Text('View all', style: TextStyle(fontSize: 11)),
+              child: Text('View all', style: TextStyle(fontSize: 11)),
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 6),
         if (state.transactions.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 22),
             child: Row(
               children: [
-                Icon(Icons.receipt_long_outlined, color: AppColors.muted),
+                Icon(
+                  Icons.receipt_long_outlined,
+                  color: AppPalette.of(context).muted,
+                ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'No demo activity yet. Verified transactions will appear here after payment services are connected.',
                     style: TextStyle(
-                      color: AppColors.muted,
+                      color: AppPalette.of(context).muted,
                       fontSize: 12,
                       height: 1.5,
                     ),
@@ -626,8 +649,8 @@ class DashboardScreen extends StatelessWidget {
                       height: 40,
                       decoration: BoxDecoration(
                         color: transaction.incoming
-                            ? AppColors.mint
-                            : AppColors.primaryLight,
+                            ? AppPalette.of(context).mint
+                            : AppPalette.of(context).primaryLight,
                         borderRadius: BorderRadius.circular(13),
                       ),
                       child: Icon(
@@ -637,10 +660,10 @@ class DashboardScreen extends StatelessWidget {
                         size: 18,
                         color: transaction.incoming
                             ? const Color(0xFF358467)
-                            : AppColors.primary,
+                            : AppPalette.of(context).primary,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -649,23 +672,23 @@ class DashboardScreen extends StatelessWidget {
                             transaction.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text(
                             transaction.category,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
-                              color: AppColors.muted,
+                              color: AppPalette.of(context).muted,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
                       '${transaction.incoming ? '+' : '−'}${formatMoney(transaction.amount)}',
                       style: TextStyle(
@@ -673,7 +696,7 @@ class DashboardScreen extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                         color: transaction.incoming
                             ? const Color(0xFF358467)
-                            : AppColors.ink,
+                            : AppPalette.of(context).ink,
                       ),
                     ),
                   ],
@@ -684,11 +707,11 @@ class DashboardScreen extends StatelessWidget {
     ),
   );
 
-  Widget _activityInsights() => SurfaceCard(
+  Widget _activityInsights(BuildContext context) => SurfaceCard(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Activity insights',
           style: TextStyle(
             fontSize: 17,
@@ -696,28 +719,35 @@ class DashboardScreen extends StatelessWidget {
             letterSpacing: -.4,
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
+        SizedBox(height: 8),
+        Text(
           'Spending summaries will appear after verified payment activity is available.',
-          style: TextStyle(fontSize: 12, color: AppColors.muted, height: 1.5),
+          style: TextStyle(
+            fontSize: 12,
+            color: AppPalette.of(context).muted,
+            height: 1.5,
+          ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: AppColors.background,
+            color: AppPalette.of(context).background,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.insights_outlined, color: AppColors.primary),
+              Icon(
+                Icons.insights_outlined,
+                color: AppPalette.of(context).primary,
+              ),
               SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'There is no spending data to show.',
                   style: TextStyle(
-                    color: AppColors.muted,
+                    color: AppPalette.of(context).muted,
                     fontSize: 11,
                     height: 1.5,
                   ),

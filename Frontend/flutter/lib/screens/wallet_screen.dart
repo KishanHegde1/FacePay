@@ -27,55 +27,58 @@ class WalletScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const _Eyebrow('YOUR PAYMENT SPACE'),
-                    const SizedBox(height: 9),
-                    const Text(
+                    SizedBox(height: 9),
+                    Text(
                       'Your wallet',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -1.1,
-                        color: AppColors.ink,
+                        color: AppPalette.of(context).ink,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       'Your payment setup will appear here when services are connected.',
-                      style: TextStyle(color: AppColors.muted, height: 1.5),
+                      style: TextStyle(
+                        color: AppPalette.of(context).muted,
+                        height: 1.5,
+                      ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28),
                     if (compact) ...[
                       overview,
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18),
                       status,
                     ] else
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(flex: 6, child: overview),
-                          const SizedBox(width: 24),
-                          const Expanded(flex: 5, child: _PaymentStatusCard()),
+                          SizedBox(width: 24),
+                          Expanded(flex: 5, child: _PaymentStatusCard()),
                         ],
                       ),
-                    const SizedBox(height: 30),
-                    const Text(
+                    SizedBox(height: 30),
+                    Text(
                       'Bank connection preview',
                       style: TextStyle(
                         fontSize: 21,
-                        color: AppColors.ink,
+                        color: AppPalette.of(context).ink,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -.5,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       'Explore supported bank names without connecting an account or sharing financial details.',
                       style: TextStyle(
-                        color: AppColors.muted,
+                        color: AppPalette.of(context).muted,
                         fontSize: 12,
                         height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    SizedBox(height: 15),
                     SurfaceCard(
                       padding: const EdgeInsets.all(22),
                       child: _BankMethodRow(
@@ -83,14 +86,14 @@ class WalletScreen extends StatelessWidget {
                         onTap: onLinkBank,
                       ),
                     ),
-                    const SizedBox(height: 22),
-                    const Row(
+                    SizedBox(height: 22),
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
                           Icons.shield_outlined,
                           size: 17,
-                          color: AppColors.muted,
+                          color: AppPalette.of(context).muted,
                         ),
                         SizedBox(width: 9),
                         Expanded(
@@ -98,14 +101,14 @@ class WalletScreen extends StatelessWidget {
                             'No card, balance, or real bank connection is stored in this wallet. Demo payment activity stays only while the app is open.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.muted,
+                              color: AppPalette.of(context).muted,
                               height: 1.6,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -138,7 +141,7 @@ class _WalletOverview extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: .18),
+            color: AppPalette.of(context).primary.withValues(alpha: .18),
             blurRadius: 28,
             offset: const Offset(0, 12),
           ),
@@ -184,7 +187,7 @@ class _WalletOverview extends StatelessWidget {
                           color: Colors.white.withValues(alpha: .15),
                           borderRadius: BorderRadius.circular(7),
                         ),
-                        child: const Text(
+                        child: Text(
                           'PAYMENT SETUP',
                           style: TextStyle(
                             color: Colors.white,
@@ -197,14 +200,14 @@ class _WalletOverview extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 28),
-                const Icon(
+                SizedBox(height: 28),
+                Icon(
                   Icons.account_balance_wallet_outlined,
                   color: Colors.white,
                   size: 36,
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: 16),
+                Text(
                   'Your wallet is ready for setup',
                   style: TextStyle(
                     color: Colors.white,
@@ -213,8 +216,8 @@ class _WalletOverview extends StatelessWidget {
                     letterSpacing: -.6,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   'No card, available balance, or payment history has been created.',
                   style: TextStyle(
                     color: Color(0xFFE3DEFA),
@@ -222,12 +225,12 @@ class _WalletOverview extends StatelessWidget {
                     height: 1.55,
                   ),
                 ),
-                const SizedBox(height: 18),
+                SizedBox(height: 18),
                 Text(
                   bank == null
                       ? 'Select a bank from the local directory when you are ready.'
                       : '${bank.name} is selected in the local bank preview.',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Color(0xFFEDE9FF),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -251,8 +254,8 @@ class _PaymentStatusCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _Eyebrow('PAYMENT STATUS'),
-        const SizedBox(height: 14),
-        const Text(
+        SizedBox(height: 14),
+        Text(
           'Payments are not active yet',
           style: TextStyle(
             fontSize: 23,
@@ -261,28 +264,31 @@ class _PaymentStatusCard extends StatelessWidget {
             letterSpacing: -.7,
           ),
         ),
-        const SizedBox(height: 10),
-        const Text(
+        SizedBox(height: 10),
+        Text(
           'You can try local demo payments. A verified payment provider is still needed to show a balance, add a payment method, or move money.',
-          style: TextStyle(color: AppColors.muted, height: 1.6),
+          style: TextStyle(color: AppPalette.of(context).muted, height: 1.6),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.primaryLight,
+            color: AppPalette.of(context).primaryLight,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+              Icon(
+                Icons.lock_outline_rounded,
+                color: AppPalette.of(context).primary,
+              ),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'No financial information is collected by this screen.',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: AppPalette.of(context).primary,
                     fontSize: 12,
                     height: 1.5,
                     fontWeight: FontWeight.w700,
@@ -311,21 +317,25 @@ class _BankMethodRow extends StatelessWidget {
       height: 46,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: linked ? const Color(0xFFDDF6EA) : AppColors.primaryLight,
+        color: linked
+            ? AppPalette.of(context).tint(const Color(0xFFDDF6EA))
+            : AppPalette.of(context).primaryLight,
         borderRadius: BorderRadius.circular(14),
       ),
       child: linked
           ? Text(
               bank!.monogram,
-              style: const TextStyle(
-                color: Color(0xFF338767),
+              style: TextStyle(
+                color: (AppPalette.of(context).dark
+                    ? const Color(0xFF88DAB9)
+                    : const Color(0xFF338767)),
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
               ),
             )
-          : const Icon(
+          : Icon(
               Icons.account_balance_outlined,
-              color: AppColors.primary,
+              color: AppPalette.of(context).primary,
             ),
     );
     final details = Column(
@@ -333,15 +343,15 @@ class _BankMethodRow extends StatelessWidget {
       children: [
         Text(
           linked ? bank!.name : 'Browse bank directory',
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: 5),
         Text(
           linked
               ? 'Demo account · •••• ${bank!.lastFour}'
               : 'Link a demo bank to preview this experience.',
-          style: const TextStyle(
-            color: AppColors.muted,
+          style: TextStyle(
+            color: AppPalette.of(context).muted,
             fontSize: 12,
             height: 1.5,
           ),
@@ -364,16 +374,16 @@ class _BankMethodRow extends StatelessWidget {
                       Row(
                         children: [
                           mark,
-                          const SizedBox(width: 16),
+                          SizedBox(width: 16),
                           Expanded(child: details),
                         ],
                       ),
                       if (onTap != null)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(top: 10, left: 62),
                           child: Icon(
                             Icons.chevron_right_rounded,
-                            color: AppColors.muted,
+                            color: AppPalette.of(context).muted,
                           ),
                         ),
                     ],
@@ -381,13 +391,13 @@ class _BankMethodRow extends StatelessWidget {
                 : Row(
                     children: [
                       mark,
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
                       Expanded(child: details),
                       if (onTap != null) ...[
-                        const SizedBox(width: 8),
-                        const Icon(
+                        SizedBox(width: 8),
+                        Icon(
                           Icons.chevron_right_rounded,
-                          color: AppColors.muted,
+                          color: AppPalette.of(context).muted,
                         ),
                       ],
                     ],
@@ -407,8 +417,8 @@ class _Eyebrow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     text,
-    style: const TextStyle(
-      color: AppColors.muted,
+    style: TextStyle(
+      color: AppPalette.of(context).muted,
       fontSize: 10,
       fontWeight: FontWeight.w700,
       letterSpacing: 1.6,

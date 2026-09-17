@@ -14,6 +14,9 @@ import 'balance_screen.dart';
 import '../services/bank_balance_service.dart';
 import '../services/face_enrollment_service.dart';
 import '../services/face_scan_purpose.dart';
+import '../services/app_settings.dart';
+import '../services/profile_photo_service.dart';
+import 'settings_screen.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -48,11 +51,38 @@ class _AppShellState extends State<AppShell> {
   ];
   late final FaceEnrollmentService _faceEnrollment =
       widget.faceEnrollmentService ?? FaceEnrollmentService();
+  final ProfilePhotoRepository _photos = ProfilePhotoService();
+  AppSettings? _fallbackSettings;
+
+  void _settings() {
+    final settings =
+        AppSettingsScope.maybeOf(context) ??
+        (_fallbackSettings ??= AppSettings());
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SettingsScreen(settings: settings),
+      ),
+    );
+  }
+
+  Future<void> _loadProfilePhoto() async {
+    final id = widget.profile?.id;
+    if (id == null) return;
+    try {
+      final photo = await _photos.read(id);
+      if (mounted && widget.profile?.id == id) {
+        widget.state.setProfilePhoto(photo);
+      }
+    } catch (_) {
+      // A failed local photo read must not block sign-in or navigation.
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _loadFaceEnrollment();
+    _loadProfilePhoto();
   }
 
   Future<void> _loadFaceEnrollment() async {
@@ -72,6 +102,7 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    _fallbackSettings?.dispose();
     if (widget.faceEnrollmentService == null) _faceEnrollment.dispose();
     super.dispose();
   }
@@ -123,7 +154,7 @@ class _AppShellState extends State<AppShell> {
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: AppPalette.of(context).surface,
     builder: (context) => SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(28, 8, 28, 32),
@@ -131,23 +162,26 @@ class _AppShellState extends State<AppShell> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'You’re all caught up',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               widget.state.notificationsEnabled
                   ? 'Your account is ready for payment setup.'
                   : 'Notifications are paused. You can turn them on in Profile.',
-              style: const TextStyle(color: AppColors.muted, height: 1.6),
+              style: TextStyle(
+                color: AppPalette.of(context).muted,
+                height: 1.6,
+              ),
             ),
             if (widget.state.notificationsEnabled) ...[
-              const SizedBox(height: 20),
-              const ListTile(
+              SizedBox(height: 20),
+              ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: CircleAvatar(
-                  backgroundColor: AppColors.mint,
+                  backgroundColor: AppPalette.of(context).mint,
                   child: Icon(Icons.check_rounded, color: Color(0xFF2C8868)),
                 ),
                 title: Text('Welcome to FacePay'),
@@ -172,6 +206,10 @@ class _AppShellState extends State<AppShell> {
           profile: widget.profile,
           onSaveProfile: widget.onSaveProfile,
           onSignOut: widget.onSignOut,
+          onSettings: _settings,
+          photo: widget.state.profilePhoto,
+          photoRepository: _photos,
+          onPhotoChanged: widget.state.setProfilePhoto,
         ),
         _ => DashboardScreen(
           state: widget.state,
@@ -206,10 +244,20 @@ class _AppShellState extends State<AppShell> {
             : SafeArea(
                 top: false,
                 child: Container(
-                  height: 78,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: AppColors.border)),
+                  constraints: BoxConstraints(
+                    minHeight: 78,
+                    maxHeight:
+                        78 +
+                        (MediaQuery.textScalerOf(context).scale(16) - 16).clamp(
+                          0,
+                          48,
+                        ),
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppPalette.of(context).surface,
+                    border: Border(
+                      top: BorderSide(color: AppPalette.of(context).border),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -220,8 +268,11 @@ class _AppShellState extends State<AppShell> {
                           child: IconButton.filled(
                             tooltip: 'Send a payment',
                             onPressed: _payment,
-                            icon: const Icon(Icons.north_east_rounded),
+                            icon: Icon(Icons.north_east_rounded),
                             style: IconButton.styleFrom(
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onPrimary,
                               fixedSize: const Size(50, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(18),
@@ -251,10 +302,12 @@ class _AppShellState extends State<AppShell> {
           children: [
             Icon(
               _icons[index],
-              color: _selected == index ? AppColors.primary : AppColors.muted,
+              color: _selected == index
+                  ? AppPalette.of(context).primary
+                  : AppPalette.of(context).muted,
               size: 23,
             ),
-            const SizedBox(height: 5),
+            SizedBox(height: 5),
             Text(
               label,
               style: TextStyle(
@@ -262,7 +315,9 @@ class _AppShellState extends State<AppShell> {
                 fontWeight: _selected == index
                     ? FontWeight.w800
                     : FontWeight.w500,
-                color: _selected == index ? AppColors.primary : AppColors.muted,
+                color: _selected == index
+                    ? AppPalette.of(context).primary
+                    : AppPalette.of(context).muted,
               ),
             ),
           ],
@@ -274,50 +329,60 @@ class _AppShellState extends State<AppShell> {
   Widget _topbar(bool wide) => Container(
     height: wide ? 88 : 76,
     padding: EdgeInsets.symmetric(horizontal: wide ? 32 : 20),
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      border: Border(bottom: BorderSide(color: AppColors.border)),
+    decoration: BoxDecoration(
+      color: AppPalette.of(context).surface,
+      border: Border(bottom: BorderSide(color: AppPalette.of(context).border)),
     ),
     child: Row(
       children: [
         if (wide) ...[
           Text(
             _labels[_selected],
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
-          const SizedBox(width: 12),
-          const Text(
+          SizedBox(width: 12),
+          Text(
             '/ Personal account',
-            style: TextStyle(fontSize: 12, color: AppColors.muted),
+            style: TextStyle(fontSize: 12, color: AppPalette.of(context).muted),
           ),
         ] else
-          const FacePayLogo(size: 30),
+          FacePayLogo(
+            size: 30,
+            showName:
+                MediaQuery.sizeOf(context).width >= 360 &&
+                MediaQuery.textScalerOf(context).scale(1) <= 1.3,
+          ),
         const Spacer(),
         if (wide && MediaQuery.sizeOf(context).width >= 1200) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+              color: AppPalette.of(context).primaryLight,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Text(
+            child: Text(
               'PERSONAL ACCOUNT',
               style: TextStyle(
-                color: AppColors.primary,
+                color: AppPalette.of(context).primary,
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 letterSpacing: .8,
               ),
             ),
           ),
-          const SizedBox(width: 20),
+          SizedBox(width: 20),
         ],
+        IconButton(
+          onPressed: _settings,
+          tooltip: 'Settings',
+          icon: Icon(Icons.settings_outlined),
+        ),
         IconButton(
           onPressed: _notifications,
           tooltip: 'Notifications',
-          icon: const Icon(Icons.notifications_none_rounded),
+          icon: Icon(Icons.notifications_none_rounded),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Semantics(
           label: 'Open profile',
           button: true,
@@ -328,14 +393,15 @@ class _AppShellState extends State<AppShell> {
               padding: const EdgeInsets.all(5),
               child: PersonAvatar(
                 name: widget.state.displayName,
-                color: AppColors.mint,
+                photo: widget.state.profilePhoto,
+                color: AppPalette.of(context).mint,
                 size: 38,
               ),
             ),
           ),
         ),
         if (wide) ...[
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 130),
             child: Text(
@@ -343,7 +409,7 @@ class _AppShellState extends State<AppShell> {
                   ? 'Profile'
                   : widget.state.displayName,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -353,9 +419,9 @@ class _AppShellState extends State<AppShell> {
 
   Widget _sidebar() => Container(
     width: 236,
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      border: Border(right: BorderSide(color: AppColors.border)),
+    decoration: BoxDecoration(
+      color: AppPalette.of(context).surface,
+      border: Border(right: BorderSide(color: AppPalette.of(context).border)),
     ),
     child: SafeArea(
       child: LayoutBuilder(
@@ -372,20 +438,20 @@ class _AppShellState extends State<AppShell> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const FacePayLogo(size: 38),
-                      const SizedBox(height: 48),
-                      const Padding(
+                      SizedBox(height: 48),
+                      Padding(
                         padding: EdgeInsets.only(left: 12),
                         child: Text(
                           'YOUR SPACE',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.muted,
+                            color: AppPalette.of(context).muted,
                             letterSpacing: 1.8,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18),
                       for (var i = 0; i < 4; i++)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
@@ -393,15 +459,17 @@ class _AppShellState extends State<AppShell> {
                             color: Colors.transparent,
                             child: ListTile(
                               selected: _selected == i,
-                              selectedTileColor: AppColors.primaryLight,
-                              selectedColor: AppColors.primary,
+                              selectedTileColor: AppPalette.of(
+                                context,
+                              ).primaryLight,
+                              selectedColor: AppPalette.of(context).primary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               leading: Icon(_icons[i], size: 20),
                               title: Text(
                                 _labels[i],
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -410,7 +478,7 @@ class _AppShellState extends State<AppShell> {
                             ),
                           ),
                         ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       PrimaryButton(
                         label: 'Payment setup',
                         onPressed: _payment,
@@ -424,32 +492,34 @@ class _AppShellState extends State<AppShell> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SurfaceCard(
-                          color: const Color(0xFFF7F6FF),
+                          color: AppPalette.of(
+                            context,
+                          ).tint(const Color(0xFFF7F6FF)),
                           padding: const EdgeInsets.all(18),
                           radius: 18,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.face_retouching_natural,
                                 size: 26,
-                                color: AppColors.primary,
+                                color: AppPalette.of(context).primary,
                               ),
-                              const SizedBox(height: 13),
-                              const Text(
+                              SizedBox(height: 13),
+                              Text(
                                 'A little more you.',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const SizedBox(height: 6),
-                              const Text(
+                              SizedBox(height: 6),
+                              Text(
                                 'Your people. Your moments. Your way to pay.',
                                 style: TextStyle(
                                   fontSize: 11,
                                   height: 1.7,
-                                  color: AppColors.muted,
+                                  color: AppPalette.of(context).muted,
                                 ),
                               ),
                               TextButton(
@@ -458,7 +528,7 @@ class _AppShellState extends State<AppShell> {
                                   padding: EdgeInsets.zero,
                                   alignment: Alignment.centerLeft,
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Explore FacePay →',
                                   style: TextStyle(fontSize: 11),
                                 ),
@@ -466,12 +536,12 @@ class _AppShellState extends State<AppShell> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        const Text(
+                        SizedBox(height: 24),
+                        Text(
                           'Frontend preview · v0.1',
                           style: TextStyle(
                             fontSize: 10,
-                            color: AppColors.muted,
+                            color: AppPalette.of(context).muted,
                           ),
                         ),
                       ],

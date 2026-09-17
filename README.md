@@ -38,10 +38,13 @@ See [running instructions](docs/RUNNING.md), [data and storage](docs/DATA_AND_ST
 
 Repository: https://github.com/KishanHegde1/FacePay
 
-The synchronized D folder is a working source copy. The existing Git checkout used for publishing is:
+The project at `D:\Face Payment` is the Git working folder. Edit, test and publish from this folder:
 
-```text
-C:\Users\kisha\Documents\Codex\2026-09-13\referenced-chatgpt-conversation-this-is-an\work\FacePay-github
+```powershell
+Set-Location 'D:\Face Payment'
+git status
+# Stage only the files reviewed for your change, then commit and push.
+git push origin main
 ```
 
-Git commands must run inside a Git checkout. Future edits in either folder do not automatically appear in the other; review and back up differences before syncing again. Keep private environment files, signing keys, generated builds and local backups out of Git.
+Keep private environment files, signing keys, generated builds and local backups out of Git. Older C-drive copies are not the active source folder.
