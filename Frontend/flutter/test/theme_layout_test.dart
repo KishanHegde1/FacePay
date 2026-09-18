@@ -17,6 +17,7 @@ import 'package:face_payment/screens/bank_link_screen.dart';
 import 'package:face_payment/screens/balance_screen.dart';
 import 'package:face_payment/screens/settings_screen.dart';
 import 'package:face_payment/screens/scan_screen.dart';
+import 'package:face_payment/screens/server_connection_screen.dart';
 import 'package:face_payment/services/app_settings.dart';
 import 'package:face_payment/ui/design.dart';
 import 'frontend_test.dart' as helpers;
@@ -44,6 +45,8 @@ void main() {
             addTearDown(state.dispose);
             addTearDown(settings.dispose);
             final pages = <String, Widget>{
+              'connecting': const ServerConnectionScreen(),
+              'delayed': ServerConnectionScreen(waiting: false, onRetry: () {}),
               'login': AuthScreen(
                 authService: helpers.FakeAuthService(),
                 onAuthenticated: (_) {},
@@ -83,11 +86,17 @@ void main() {
                   ),
                 ),
               );
-              await tester.pumpAndSettle();
+              if (entry.key == 'connecting') {
+                await tester.pump(const Duration(milliseconds: 300));
+              } else {
+                await tester.pumpAndSettle();
+              }
               expect(tester.takeException(), isNull, reason: entry.key);
               if (const bool.fromEnvironment('SAVE_PREVIEWS') &&
                   width == 390 &&
                   [
+                    'connecting',
+                    'delayed',
                     'login',
                     'dashboard',
                     'profile',

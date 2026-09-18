@@ -13,6 +13,7 @@
 - Home > FACE VERIFICATION > Register Face saves account enrollment metadata through Rust into Neon.
 - Demo payment: enter recipient and amount, review, complete the camera check, explicitly approve, then show local demo activity and a receipt. No money moves.
 
+- Friendly server-connection startup screen and bounded automatic session-restore retries while the hosted server responds; saved login remains intact on temporary failures.
 - Settings from the home header and Profile, with saved System/Light/Dark appearance across app routes.
 - Gallery/camera profile photo selection, removal, metadata removal and encrypted per-profile device storage.
 

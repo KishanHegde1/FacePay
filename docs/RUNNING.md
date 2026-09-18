@@ -55,7 +55,7 @@ Production Render keeps `AUTH_TEST_ENABLED=false` and uses Render's assigned por
 - **No pubspec.yaml:** use `Frontend/flutter` or the root run script.
 - **Not a Git repository:** run Git commands from `D:\Face Payment`, the active Git working folder.
 - **Missing packages:** run `flutter pub get` in the Flutter folder.
-- **Restore timeout:** check internet/Render availability; temporary errors retain the saved token.
+- **Slow startup/server wake-up:** FacePay shows a connecting message and automatically retries the read-only session lookup for timeouts, connection failures and HTTP 502/503/504 responses. It tries up to five times with short backoff (roughly 95 seconds maximum with the existing request timeout). The saved token stays intact. If still unavailable, a gentle delay message offers **Try again**. A genuinely rejected/expired session still requires sign-in.
 - **SQL database guard failure:** use the full `neon_setup.sql` transaction or let backend startup run migrations.
 - **Scripts blocked by local policy:** use the direct Flutter commands above, without changing machine-wide policy.
 

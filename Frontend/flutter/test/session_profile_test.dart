@@ -52,11 +52,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(store.token, 'saved-token');
       expect(find.byType(AuthScreen), findsNothing);
-      expect(find.text('Offline'), findsOneWidget);
-      expect(
-        find.text('Your saved login is still kept on this device.'),
-        findsOneWidget,
-      );
+      expect(find.text('The server is taking a little longer'), findsOneWidget);
+      expect(find.text('Offline'), findsNothing);
+      expect(find.text('Sign in with another account'), findsNothing);
+      expect(auth.restores, 5);
       auth.failure = null;
       await helpers.tapVisible(tester, find.text('Try again'));
       expect(find.byType(AppShell), findsOneWidget);
@@ -64,23 +63,30 @@ void main() {
     },
   );
 
-  testWidgets('restore failure can discard only the saved login', (
-    tester,
-  ) async {
-    final store = helpers.MemorySessionStore()..token = 'saved-token';
-    final auth = RestoringAuth()
-      ..failure = const AuthFailure('Offline', code: 'connection');
-    await tester.pumpWidget(
-      FacePaymentApp(authService: auth, sessionStore: store),
-    );
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'non-transient restore failure can discard only the saved login',
+    (tester) async {
+      final store = helpers.MemorySessionStore()..token = 'saved-token';
+      final auth = RestoringAuth()
+        ..failure = const AuthFailure(
+          'Unexpected response',
+          code: 'invalid_response',
+        );
+      await tester.pumpWidget(
+        FacePaymentApp(authService: auth, sessionStore: store),
+      );
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
 
-    await helpers.tapVisible(tester, find.text('Sign in with another account'));
-    expect(store.token, isNull);
-    expect(find.byType(AuthScreen), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
-  });
+      await helpers.tapVisible(
+        tester,
+        find.text('Sign in with another account'),
+      );
+      expect(store.token, isNull);
+      expect(find.byType(AuthScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets('revoked session is cleared and asks for OTP', (tester) async {
     final store = helpers.MemorySessionStore()..token = 'revoked-token';

@@ -6,6 +6,7 @@ import 'package:face_payment/screens/auth_screen.dart';
 import 'package:face_payment/screens/splash_screen.dart';
 import 'package:face_payment/services/auth_api.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'frontend_test.dart' as helpers;
@@ -34,7 +35,154 @@ class StartupStore extends helpers.MemorySessionStore {
   }
 }
 
+class ConnectionAuth extends StartupAuth {
+  final failures = <AuthFailure>[];
+  Completer<AuthSession>? pending;
+  @override
+  Future<AuthSession> getCurrentUser(String token) async {
+    restores++;
+    if (failures.isNotEmpty) throw failures.removeAt(0);
+    return pending?.future ?? helpers.testSession;
+  }
+}
+
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets(
+    'slow server shows connecting message until session is verified',
+    (tester) async {
+      final auth = ConnectionAuth()..pending = Completer<AuthSession>();
+      final store = StartupStore()..token = 'saved-token';
+      await tester.pumpWidget(
+        FacePaymentApp(authService: auth, sessionStore: store),
+      );
+      await tester.pump(const Duration(seconds: 5));
+      expect(find.text('Connecting to the server'), findsOneWidget);
+      expect(find.textContaining('Please wait a moment'), findsOneWidget);
+      expect(find.text('We could not restore your account'), findsNothing);
+      expect(find.byType(AppShell), findsNothing);
+      expect(store.token, 'saved-token');
+      auth.pending!.complete(helpers.testSession);
+      await tester.pumpAndSettle();
+      expect(find.byType(AppShell), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets('temporary timeout and gateway failures recover automatically', (
+    tester,
+  ) async {
+    final auth = ConnectionAuth()
+      ..failures.addAll([
+        const AuthFailure('Timed out', code: 'timeout'),
+        const AuthFailure('Gateway unavailable', statusCode: 503),
+      ]);
+    final store = StartupStore()..token = 'saved-token';
+    await tester.pumpWidget(
+      FacePaymentApp(authService: auth, sessionStore: store),
+    );
+    await tester.pump();
+    expect(auth.restores, 1);
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+    expect(auth.restores, 2);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(auth.restores, 3);
+    expect(find.byType(AppShell), findsOneWidget);
+    expect(store.token, 'saved-token');
+    expect(find.text('We could not restore your account'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
+    'retries are bounded, friendly delayed state retains login and retries safely',
+    (tester) async {
+      final auth = ConnectionAuth()
+        ..failures.addAll(
+          List.filled(5, const AuthFailure('Offline', code: 'connection')),
+        );
+      final store = StartupStore()..token = 'saved-token';
+      await tester.pumpWidget(
+        FacePaymentApp(authService: auth, sessionStore: store),
+      );
+      await tester.pump();
+      for (final seconds in [2, 4, 6, 8]) {
+        await tester.pump(Duration(seconds: seconds));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(auth.restores, 5);
+      expect(find.text('The server is taking a little longer'), findsOneWidget);
+      expect(find.text('We could not restore your account'), findsNothing);
+      expect(find.text('Sign in with another account'), findsNothing);
+      expect(store.token, 'saved-token');
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      expect(auth.restores, 6);
+      expect(find.byType(AppShell), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'rejected session clears token immediately without connection retries',
+    (tester) async {
+      final auth = ConnectionAuth()
+        ..failures.add(const AuthFailure('Expired', statusCode: 401));
+      final store = StartupStore()..token = 'saved-token';
+      await tester.pumpWidget(
+        FacePaymentApp(authService: auth, sessionStore: store),
+      );
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      expect(auth.restores, 1);
+      expect(store.token, isNull);
+      expect(find.byType(AuthScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets('invalid server response is not retried as a sleeping server', (
+    tester,
+  ) async {
+    final auth = ConnectionAuth()
+      ..failures.add(
+        const AuthFailure('Unexpected response', code: 'invalid_response'),
+      );
+    final store = StartupStore()..token = 'saved-token';
+    await tester.pumpWidget(
+      FacePaymentApp(authService: auth, sessionStore: store),
+    );
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(auth.restores, 1);
+    expect(find.text('Unexpected response'), findsOneWidget);
+    expect(store.token, 'saved-token');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
+    'disposing during retry cancels timer and makes no further requests',
+    (tester) async {
+      final auth = ConnectionAuth()
+        ..failures.add(const AuthFailure('Timed out', code: 'timeout'));
+      final store = StartupStore()..token = 'saved-token';
+      await tester.pumpWidget(
+        FacePaymentApp(authService: auth, sessionStore: store),
+      );
+      await tester.pump();
+      expect(auth.restores, 1);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 30));
+      expect(auth.restores, 1);
+      expect(auth.disposals, 1);
+      expect(store.token, 'saved-token');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('logo lasts two seconds, then splash completes once at five', (
     tester,
   ) async {
