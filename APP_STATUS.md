@@ -33,6 +33,10 @@ The registration lookup checks the account, not the current installation identif
 
 See [data and storage](docs/DATA_AND_STORAGE.md).
 
+## ICICI integration preparation
+
+The supplied UPI PDF has been reviewed. Offline Rust account-discovery contracts and privacy-focused parsing tests are prepared; no ICICI request or real bank operation is enabled. ICICI API access, the current authentication/encryption contract and NPCI Common Library/approved SDK are still required. See [ICICI setup](docs/ICICI_UPI_INTEGRATION.md).
+
 ## Remaining work
 
 Opt-in recipient identity matching; evaluated face-template/liveness provider; server-verified device binding; stronger enrollment, recovery and deletion controls; sponsor-bank sandbox; real bank linking, authorization and balance retrieval; durable payment processing, reconciliation, support and security review; release signing.

@@ -21,6 +21,7 @@ use tower_http::{cors::CorsLayer, set_header::SetResponseHeaderLayer};
 
 mod database;
 mod hdfc;
+pub mod icici;
 use database::Profile;
 
 const CHALLENGE_TTL: Duration = Duration::from_secs(300);

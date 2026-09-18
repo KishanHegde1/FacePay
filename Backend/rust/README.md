@@ -92,3 +92,9 @@ No face template, image or identity match is stored or performed. Installation i
 
 `flutter analyze --no-pub` and `flutter test --no-pub` check the frontend. Android secure storage and uninstall behavior still require a physical device/emulator test.
 
+
+## ICICI UPI preparation
+
+Offline account-discovery contracts are available in `src/icici.rs`; they do not
+enable bank traffic. See [ICICI integration preparation](../../docs/ICICI_UPI_INTEGRATION.md)
+for document discrepancies, bank access and SDK requirements.
