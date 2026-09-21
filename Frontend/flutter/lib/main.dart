@@ -11,6 +11,8 @@ import 'screens/app_shell.dart';
 import 'screens/server_connection_screen.dart';
 import 'ui/design.dart';
 import 'services/app_settings.dart';
+import 'services/device_lock_service.dart';
+import 'ui/device_lock_gate.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,10 +25,12 @@ class FacePaymentApp extends StatefulWidget {
     this.authService,
     this.sessionStore,
     this.initializeServices,
+    this.deviceLockService,
   });
   final AuthService? authService;
   final SessionStore? sessionStore;
   final Future<void> Function()? initializeServices;
+  final DeviceLockService? deviceLockService;
   @override
   State<FacePaymentApp> createState() => _FacePaymentAppState();
 }
@@ -39,6 +43,8 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
   Timer? _restoreRetryTimer;
   Completer<void>? _restoreRetryWait;
   final AppSettings _settings = AppSettings();
+  late final DeviceLockService _deviceLockService =
+      widget.deviceLockService ?? LocalDeviceLockService();
   String? _error;
   Future<void> Function()? _retry;
   late final AuthService _auth;
@@ -250,6 +256,21 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: _settings.themeMode,
+        builder: (context, child) {
+          if (_session != null && !_settings.loaded) {
+            return const ColoredBox(
+              color: AppColors.background,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return DeviceLockGate(
+            active: _session != null,
+            enabled: _settings.appLockEnabled,
+            service: _deviceLockService,
+            onUseAnotherAccount: _useAnotherAccount,
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
         home: Builder(
           builder: (context) => _splash
               ? SplashScreen(
@@ -326,6 +347,7 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
                   accessToken: _session!.accessToken,
                   onSaveProfile: _saveProfile,
                   onSignOut: _signOut,
+                  deviceLockService: _deviceLockService,
                 )
               : AuthScreen(authService: _auth, onAuthenticated: _signIn),
         ),

@@ -105,16 +105,16 @@ void main() {
       expect(find.text('1 / 2 blinks'), findsOneWidget);
       session.found(const ScanDetection.face());
       await tester.pumpAndSettle();
-      expect(find.text('Two blinks detected'), findsOneWidget);
-      expect(find.text('Face liveness check complete.'), findsOneWidget);
+      expect(find.text('Live face detected'), findsOneWidget);
       expect(
-        find.textContaining('No face image or ML Kit landmark data is saved.'),
+        find.text('Recipient matching is not connected yet.'),
         findsOneWidget,
       );
       expect(
-        find.textContaining('face-template provider is still required'),
+        find.textContaining('Identifying the recipient requires'),
         findsOneWidget,
       );
+      expect(find.textContaining('authorize with UPI PIN'), findsOneWidget);
       expect(state.faceRegistered, isFalse);
       expect(state.transactions, isEmpty);
       expect(state.balance, 0);

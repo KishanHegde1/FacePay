@@ -57,11 +57,19 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   Widget build(BuildContext context) {
     final qr = widget.detection.kind == ScanDetectionKind.qr;
     final enrollment = widget.purpose == FaceScanPurpose.enrollment;
-    final demoApproval = widget.purpose == FaceScanPurpose.demoPaymentApproval;
+    final recipientScan = !qr && !enrollment;
     final raw = widget.detection.rawValue ?? '';
     final preview = raw.length > 2048 ? '${raw.substring(0, 2048)}…' : raw;
     return Scaffold(
-      appBar: AppBar(title: Text(qr ? 'QR detected' : 'Blink check complete')),
+      appBar: AppBar(
+        title: Text(
+          qr
+              ? 'QR detected'
+              : enrollment
+              ? 'Blink check complete'
+              : 'Recipient face scan',
+        ),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
@@ -84,9 +92,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                       qr
                           ? 'Review scanned code'
                           : _saved
-                          ? (demoApproval
-                                ? 'Demo payment approved'
-                                : 'Face registration complete')
+                          ? 'Face registration complete'
+                          : recipientScan
+                          ? 'Live face detected'
                           : 'Two blinks detected',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
@@ -105,28 +113,24 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                     ] else ...[
                       Text(
                         _saved
-                            ? (demoApproval
-                                  ? 'Face approval complete for this demo payment.'
-                                  : 'This device is registered.')
-                            : demoApproval
-                            ? 'Ready to approve this demo payment.'
+                            ? 'This device is registered.'
                             : enrollment
                             ? 'Ready to register FacePay on this device.'
-                            : 'Face liveness check complete.',
+                            : 'Recipient matching is not connected yet.',
                         style: TextStyle(fontWeight: FontWeight.w800),
                       ),
                       SizedBox(height: 12),
                       Text(
                         _saved
-                            ? (demoApproval
-                                  ? 'The demo payment was recorded locally. No money moved.'
-                                  : 'The protected enrollment record was saved in your FacePay account. A different app installation must register again.')
+                            ? 'The protected enrollment record was saved in your FacePay account. A different app installation must register again.'
+                            : recipientScan
+                            ? 'The live face check worked. Identifying the recipient requires an approved encrypted face-template service and that person’s consented FacePay enrollment.'
                             : 'The scan found one face, completed two blinks, and did not detect a phone, tablet, or display in the camera view.',
                       ),
                       SizedBox(height: 12),
                       Text(
-                        demoApproval
-                            ? 'This is a demo approval only. It is not a real transfer or bank authorization.'
+                        recipientScan
+                            ? 'After integration, this screen will return a verified recipient name and payment address. The payer will then choose their own linked account, enter an amount, review, and authorize with UPI PIN.'
                             : 'No face image or ML Kit landmark data is saved. A certified encrypted face-template provider is still required before real face payments.',
                         style: TextStyle(color: AppPalette.of(context).muted),
                       ),
@@ -138,11 +142,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
               if (!qr && widget.onFaceVerified != null && !_saved) ...[
                 SizedBox(height: 24),
                 PrimaryButton(
-                  label: _saving
-                      ? (demoApproval ? 'Approving…' : 'Saving…')
-                      : (demoApproval
-                            ? 'Approve demo payment'
-                            : 'Register Face'),
+                  label: _saving ? 'Saving…' : 'Register Face',
                   onPressed: _saving ? null : _saveFace,
                   icon: Icons.verified_user_outlined,
                 ),
@@ -161,6 +161,13 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 onPressed: () => Navigator.of(context).pop(true),
                 icon: Icons.qr_code_scanner_rounded,
               ),
+              if (recipientScan) ...[
+                SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text('Back to payment'),
+                ),
+              ],
               if (qr) ...[
                 SizedBox(height: 12),
                 TextButton(

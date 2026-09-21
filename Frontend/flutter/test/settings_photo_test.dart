@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:face_payment/services/app_settings.dart';
+import 'package:face_payment/services/device_lock_service.dart';
 import 'package:face_payment/services/profile_photo_service.dart';
 import 'package:face_payment/screens/settings_screen.dart';
 import 'package:face_payment/screens/profile_screen.dart';
@@ -40,6 +41,26 @@ class FakePhotos implements ProfilePhotoRepository {
   }
 }
 
+class FakeDeviceLock implements DeviceLockService {
+  FakeDeviceLock({this.available = true, this.unlocked = true});
+
+  bool available;
+  bool unlocked;
+  int authenticationRequests = 0;
+
+  @override
+  Future<bool> hasEnrolledBiometrics() async => available;
+
+  @override
+  Future<bool> authenticate() async {
+    authenticationRequests++;
+    return unlocked;
+  }
+
+  @override
+  Future<void> cancel() async {}
+}
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
   test('appearance saves and restores, corrupt values use system', () async {
@@ -50,6 +71,16 @@ void main() {
     expect(restored.themeMode, ThemeMode.dark);
     SharedPreferences.setMockInitialValues({AppSettings.themeKey: 'unknown'});
     await restored.load();
+    expect(restored.themeMode, ThemeMode.system);
+    settings.dispose();
+    restored.dispose();
+  });
+  test('app lock saves and restores independently of appearance', () async {
+    final settings = AppSettings();
+    await settings.setAppLockEnabled(true);
+    final restored = AppSettings();
+    await restored.load();
+    expect(restored.appLockEnabled, isTrue);
     expect(restored.themeMode, ThemeMode.system);
     settings.dispose();
     restored.dispose();
@@ -97,6 +128,32 @@ void main() {
       Theme.of(tester.element(find.text('Appearance'))).brightness,
       Brightness.light,
     );
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('app lock requires enrolled device biometrics before enabling', (
+    tester,
+  ) async {
+    final settings = AppSettings();
+    final deviceLock = FakeDeviceLock(available: false);
+    addTearDown(settings.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: SettingsScreen(settings: settings, deviceLockService: deviceLock),
+      ),
+    );
+    await tester.ensureVisible(find.byKey(const ValueKey('app-lock-switch')));
+    await tester.tap(find.byKey(const ValueKey('app-lock-switch')));
+    await tester.pumpAndSettle();
+    expect(settings.appLockEnabled, isFalse);
+    expect(
+      find.text('Add a fingerprint or face in your phone lock settings first.'),
+      findsOneWidget,
+    );
+    deviceLock.available = true;
+    await tester.tap(find.byKey(const ValueKey('app-lock-switch')));
+    await tester.pumpAndSettle();
+    expect(settings.appLockEnabled, isTrue);
     expect(tester.takeException(), isNull);
   });
   for (final source in ImageSource.values) {

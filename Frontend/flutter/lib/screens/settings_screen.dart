@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import '../services/app_settings.dart';
+import '../services/device_lock_service.dart';
 import '../ui/design.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key, required this.settings});
+  const SettingsScreen({
+    super.key,
+    required this.settings,
+    this.deviceLockService,
+  });
   final AppSettings settings;
+  final DeviceLockService? deviceLockService;
 
   Future<void> _setTheme(BuildContext context, ThemeMode mode) async {
     try {
@@ -44,6 +50,11 @@ class SettingsScreen extends StatelessWidget {
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
+                  ),
+                  SizedBox(height: 24),
+                  _AppLockSetting(
+                    settings: settings,
+                    service: deviceLockService,
                   ),
                   SizedBox(height: 24),
                   SurfaceCard(
@@ -119,6 +130,83 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    ),
+  );
+}
+
+class _AppLockSetting extends StatefulWidget {
+  const _AppLockSetting({required this.settings, this.service});
+
+  final AppSettings settings;
+  final DeviceLockService? service;
+
+  @override
+  State<_AppLockSetting> createState() => _AppLockSettingState();
+}
+
+class _AppLockSettingState extends State<_AppLockSetting> {
+  late final DeviceLockService _service =
+      widget.service ?? LocalDeviceLockService();
+  bool _checking = false;
+
+  Future<void> _changed(bool enabled) async {
+    if (_checking || widget.settings.saving) return;
+    setState(() => _checking = true);
+    try {
+      if (enabled && !await _service.hasEnrolledBiometrics()) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Add a fingerprint or face in your phone lock settings first.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      await widget.settings.setAppLockEnabled(enabled);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('App lock could not be saved. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => SurfaceCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Security',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Lock FacePay when you leave the app. Authentication stays inside your phone.',
+        ),
+        const SizedBox(height: 12),
+        SwitchListTile(
+          key: const ValueKey('app-lock-switch'),
+          contentPadding: EdgeInsets.zero,
+          secondary: const Icon(Icons.fingerprint_rounded),
+          title: const Text('Fingerprint or device face'),
+          subtitle: Text(
+            widget.settings.appLockEnabled
+                ? 'App lock is on'
+                : 'Use biometrics already registered on this phone',
+          ),
+          value: widget.settings.appLockEnabled,
+          onChanged: _checking || widget.settings.saving ? null : _changed,
+        ),
+      ],
     ),
   );
 }

@@ -16,6 +16,7 @@ import '../services/face_enrollment_service.dart';
 import '../services/face_scan_purpose.dart';
 import '../services/app_settings.dart';
 import '../services/profile_photo_service.dart';
+import '../services/device_lock_service.dart';
 import 'settings_screen.dart';
 
 class AppShell extends StatefulWidget {
@@ -28,6 +29,7 @@ class AppShell extends StatefulWidget {
     this.balanceService = const UnconnectedBankBalanceService(),
     this.accessToken = '',
     this.faceEnrollmentService,
+    this.deviceLockService,
   });
   final BankBalanceService balanceService;
   final ProfileData? profile;
@@ -36,6 +38,7 @@ class AppShell extends StatefulWidget {
   final VoidCallback onSignOut;
   final String accessToken;
   final FaceEnrollmentService? faceEnrollmentService;
+  final DeviceLockService? deviceLockService;
   @override
   State<AppShell> createState() => _AppShellState();
 }
@@ -60,7 +63,10 @@ class _AppShellState extends State<AppShell> {
         (_fallbackSettings ??= AppSettings());
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => SettingsScreen(settings: settings),
+        builder: (_) => SettingsScreen(
+          settings: settings,
+          deviceLockService: widget.deviceLockService,
+        ),
       ),
     );
   }

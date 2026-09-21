@@ -6,6 +6,8 @@
 	<string>FacePay lets you choose a photo for your profile.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>FacePay uses the camera to scan QR codes, detect faces before verification, and take a profile photo.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>FacePay uses Face ID to unlock your signed-in account on this device.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

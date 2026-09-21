@@ -25,7 +25,7 @@ class PaymentScreen extends StatefulWidget {
   final VoidCallback? onComplete;
   final VoidCallback? onLinkBank;
 
-  /// Creates a fresh scanner for each approval attempt in device-free tests.
+  /// Creates a fresh scanner for each recipient-discovery attempt in tests.
   final ScannerSession Function()? scannerSessionFactory;
   final PaymentFeedbackService? feedbackService;
 
@@ -73,6 +73,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return double.tryParse(_amountController.text.trim().replaceAll(',', ''));
   }
 
+  List<String> get _savedRecipients {
+    final names = <String>[];
+    final seen = <String>{};
+    for (final payment in widget.state.transactions) {
+      final name = payment.title.trim();
+      if (name.isEmpty || !seen.add(name.toLowerCase())) continue;
+      names.add(name);
+      if (names.length == 5) break;
+    }
+    return names;
+  }
+
+  Future<void> _scanRecipient() async {
+    final scannerSession = widget.scannerSessionFactory?.call();
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ScanScreen(
+          state: widget.state,
+          session: scannerSession,
+          purpose: FaceScanPurpose.recipientIdentification,
+          closeAfterFaceVerified: true,
+        ),
+      ),
+    );
+  }
+
   Future<void> _review() async {
     if (widget.state.linkedBank == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,17 +107,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (!widget.state.faceRegistered) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Register FacePay on this device before approving a demo payment.',
-          ),
-        ),
-      );
-      return;
-    }
-
     final amount = _amount()!;
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
@@ -103,43 +118,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
         bank: widget.state.linkedBank!,
       ),
     );
-    if (confirmed != true || !mounted) return;
-    final scannerSession = widget.scannerSessionFactory?.call();
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => ScanScreen(
-          state: widget.state,
-          session: scannerSession,
-          purpose: FaceScanPurpose.demoPaymentApproval,
-          closeAfterFaceVerified: true,
-          onFaceVerified: () async {
-            if (_paymentCommitted) return;
-            _paymentCommitted = true;
-            widget.state.recordDemoPayment(
-              recipient: _recipientController.text,
-              amount: amount,
-            );
-            if (mounted) {
-              setState(() {
-                _recordedPayment = widget.state.transactions.first;
-                _showingConfirmation = true;
-              });
-            }
-          },
-        ),
-      ),
+    if (confirmed != true || !mounted || _paymentCommitted) return;
+    _paymentCommitted = true;
+    widget.state.recordDemoPayment(
+      recipient: _recipientController.text,
+      amount: amount,
     );
-    // Start only after both camera/result routes have closed, so the user gets
-    // the complete 4.5 seconds of visible confirmation.
-    if (mounted &&
-        _recordedPayment != null &&
-        _showingConfirmation &&
-        _confirmationTimer == null) {
-      unawaited(_feedbackService.speakThanks());
-      _confirmationTimer = Timer(const Duration(milliseconds: 4500), () {
-        if (mounted) setState(() => _showingConfirmation = false);
-      });
-    }
+    setState(() {
+      _recordedPayment = widget.state.transactions.first;
+      _showingConfirmation = true;
+    });
+    unawaited(_feedbackService.speakThanks());
+    _confirmationTimer = Timer(const Duration(milliseconds: 4500), () {
+      if (mounted) setState(() => _showingConfirmation = false);
+    });
   }
 
   void _startAnother() {
@@ -199,6 +191,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _entry() {
     final bank = widget.state.linkedBank;
+    final savedRecipients = _savedRecipients;
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       children: [
@@ -207,7 +200,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         const _DemoPill(),
         SizedBox(height: 16),
         Text(
-          'Try the payment flow',
+          'Choose who to pay',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w800,
@@ -217,7 +210,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         SizedBox(height: 8),
         Text(
-          'This records local demo activity only. No money moves, no real bank balance changes, and no details are sent to a bank.',
+          'Choose a saved recipient, scan their face, or enter a recipient manually. This preview never moves money or sends details to a bank.',
           style: TextStyle(
             color: AppPalette.of(context).muted,
             fontSize: 13,
@@ -226,6 +219,51 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         SizedBox(height: 22),
         _BankPanel(bank: bank, onLinkBank: widget.onLinkBank),
+        SizedBox(height: 18),
+        SurfaceCard(
+          color: AppPalette.of(context).surface,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Recipients',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+              SizedBox(height: 8),
+              if (savedRecipients.isEmpty)
+                Text(
+                  'No saved recipients yet. People you pay will appear here; provider-synced contacts can be added after integration.',
+                  style: TextStyle(
+                    color: AppPalette.of(context).muted,
+                    fontSize: 12,
+                    height: 1.5,
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final recipient in savedRecipients)
+                      ActionChip(
+                        avatar: Icon(Icons.person_outline_rounded, size: 18),
+                        label: Text(recipient),
+                        onPressed: () => setState(
+                          () => _recipientController.text = recipient,
+                        ),
+                      ),
+                  ],
+                ),
+              SizedBox(height: 14),
+              OutlinedButton.icon(
+                key: const ValueKey('scan-face-recipient'),
+                onPressed: _scanRecipient,
+                icon: Icon(Icons.face_retouching_natural),
+                label: Text('Scan face to find recipient'),
+              ),
+            ],
+          ),
+        ),
         SizedBox(height: 18),
         Form(
           key: _formKey,
@@ -284,23 +322,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         SizedBox(height: 20),
         PrimaryButton(
-          label: bank == null
-              ? 'Link demo bank first'
-              : !widget.state.faceRegistered
-              ? 'Register FacePay first'
-              : 'Review & approve',
+          label: bank == null ? 'Link demo bank first' : 'Review payment',
           icon: bank == null
               ? Icons.account_balance_outlined
               : Icons.arrow_forward_rounded,
-          onPressed: bank == null
-              ? widget.onLinkBank
-              : widget.state.faceRegistered
-              ? _review
-              : () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Open Home and choose Register Face first.'),
-                  ),
-                ),
+          onPressed: bank == null ? widget.onLinkBank : _review,
         ),
       ],
     );
@@ -552,7 +578,7 @@ class _DemoPaymentReviewSheet extends StatelessWidget {
             _ReceiptLine('Demo bank', '${bank.name} · •••• ${bank.lastFour}'),
             SizedBox(height: 18),
             Text(
-              'This only saves demo activity while the app remains open. No money moves, no balance changes, and no bank receives these details.',
+              'This only saves demo activity while the app remains open. A real payment will ask for UPI PIN through the approved PSP/NPCI flow; FacePay must never store that PIN.',
               style: TextStyle(
                 color: AppPalette.of(context).muted,
                 fontSize: 12,
@@ -561,8 +587,8 @@ class _DemoPaymentReviewSheet extends StatelessWidget {
             ),
             SizedBox(height: 20),
             PrimaryButton(
-              label: 'Continue to face check',
-              icon: Icons.face_retouching_natural,
+              label: 'Confirm demo payment',
+              icon: Icons.lock_outline_rounded,
               onPressed: () => Navigator.of(context).pop(true),
             ),
             SizedBox(height: 8),
