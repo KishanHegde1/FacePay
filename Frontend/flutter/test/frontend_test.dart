@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:face_payment/main.dart';
 import 'package:face_payment/data/app_state.dart';
 import 'package:face_payment/screens/app_shell.dart';
@@ -187,6 +188,7 @@ Future<void> tapVisible(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
@@ -631,7 +633,7 @@ void main() {
     scanner.complete(const ScanDetection.face());
     scanner.complete(const ScanDetection.face());
     await tester.pumpAndSettle();
-    expect(find.text('Live face detected'), findsOneWidget);
+    expect(find.text('Face detected'), findsOneWidget);
     expect(
       find.text('Recipient matching is not connected yet.'),
       findsOneWidget,

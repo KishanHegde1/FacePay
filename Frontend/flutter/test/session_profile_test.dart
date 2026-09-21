@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:face_payment/main.dart';
 import 'package:face_payment/screens/app_shell.dart';
 import 'package:face_payment/screens/auth_screen.dart';
@@ -19,6 +20,7 @@ class RestoringAuth extends helpers.FakeAuthService {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   testWidgets('saved session restores without OTP and logout removes it', (
     tester,
   ) async {

@@ -53,7 +53,7 @@ class _DeviceLockGateState extends State<DeviceLockGate>
       }
       return;
     }
-    if ((!oldWidget.active || !oldWidget.enabled) && !_locked) {
+    if (!oldWidget.active && widget.active && widget.enabled && !_locked) {
       setState(() => _locked = true);
       WidgetsBinding.instance.addPostFrameCallback((_) => _unlock());
     }
@@ -81,8 +81,7 @@ class _DeviceLockGateState extends State<DeviceLockGate>
       _authenticating = false;
       _locked = !unlocked;
       if (!unlocked) {
-        _message =
-            'FacePay is locked. Use a fingerprint or device face to continue.';
+        _message = 'FacePay is locked. Use your phone screen lock to continue.';
       }
     });
   }
@@ -120,7 +119,7 @@ class _DeviceLockGateState extends State<DeviceLockGate>
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Icons.fingerprint_rounded,
+                        Icons.phonelink_lock_rounded,
                         size: 50,
                         color: AppPalette.of(context).primary,
                       ),
@@ -139,7 +138,7 @@ class _DeviceLockGateState extends State<DeviceLockGate>
                     const SizedBox(height: 10),
                     Text(
                       _message ??
-                          'Use the fingerprint or face registered in your phone settings to unlock.',
+                          'Use your phone’s fingerprint, face, PIN, pattern, or password to unlock.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppPalette.of(context).muted,
@@ -161,7 +160,7 @@ class _DeviceLockGateState extends State<DeviceLockGate>
                     ),
                     const SizedBox(height: 18),
                     Text(
-                      'Your biometric data stays inside the phone’s secure system and is never stored by FacePay.',
+                      'FacePay receives only an unlock result. Your fingerprint, face, PIN, pattern, and password stay inside the phone’s secure system.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppPalette.of(context).muted,

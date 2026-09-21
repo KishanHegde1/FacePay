@@ -326,6 +326,27 @@ void main() {
     },
   );
 
+  test(
+    'recipient discovery detects a stable face without blink challenge',
+    () async {
+      session.dispose();
+      await session.stop();
+      session = MlKitScannerSession(now: () => now, requireFaceLiveness: false);
+      vision.faceResults = [_face()];
+      await session.start().timeout(const Duration(seconds: 5));
+      await frame(afterMs: 1000);
+      await frame();
+      expect(session.status, ScannerStatus.scanning);
+      await frame();
+      expect(session.status, ScannerStatus.detected);
+      expect(session.detection?.kind, ScanDetectionKind.face);
+      expect(session.checkingBlinks, isFalse);
+      expect(session.blinkCount, 0);
+      expect(vision.imageLabelCalls, hasLength(1));
+      expect(vision.faceCloses, isEmpty);
+    },
+  );
+
   test('stops the blink check when a phone or display is detected', () async {
     vision.faceResults = [_face()];
     vision.imageLabelResults = [

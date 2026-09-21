@@ -49,7 +49,7 @@ class FakeDeviceLock implements DeviceLockService {
   int authenticationRequests = 0;
 
   @override
-  Future<bool> hasEnrolledBiometrics() async => available;
+  Future<bool> isDeviceAuthenticationAvailable() async => available;
 
   @override
   Future<bool> authenticate() async {
@@ -130,7 +130,7 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
-  testWidgets('app lock requires enrolled device biometrics before enabling', (
+  testWidgets('app lock requires a phone screen lock before enabling', (
     tester,
   ) async {
     final settings = AppSettings();
@@ -147,7 +147,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(settings.appLockEnabled, isFalse);
     expect(
-      find.text('Add a fingerprint or face in your phone lock settings first.'),
+      find.text('Set a phone screen lock first, then try again.'),
       findsOneWidget,
     );
     deviceLock.available = true;

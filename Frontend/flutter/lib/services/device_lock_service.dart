@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
 abstract interface class DeviceLockService {
-  Future<bool> hasEnrolledBiometrics();
+  Future<bool> isDeviceAuthenticationAvailable();
   Future<bool> authenticate();
   Future<void> cancel();
 }
@@ -19,12 +19,10 @@ class LocalDeviceLockService implements DeviceLockService {
           defaultTargetPlatform == TargetPlatform.iOS);
 
   @override
-  Future<bool> hasEnrolledBiometrics() async {
+  Future<bool> isDeviceAuthenticationAvailable() async {
     if (!_supportedPlatform) return false;
     try {
-      if (!await _authentication.isDeviceSupported()) return false;
-      if (!await _authentication.canCheckBiometrics) return false;
-      return (await _authentication.getAvailableBiometrics()).isNotEmpty;
+      return await _authentication.isDeviceSupported();
     } catch (_) {
       return false;
     }
@@ -32,11 +30,11 @@ class LocalDeviceLockService implements DeviceLockService {
 
   @override
   Future<bool> authenticate() async {
-    if (!await hasEnrolledBiometrics()) return false;
+    if (!await isDeviceAuthenticationAvailable()) return false;
     try {
       return await _authentication.authenticate(
-        localizedReason: 'Unlock FacePay with your device biometrics',
-        biometricOnly: true,
+        localizedReason: 'Unlock FacePay',
+        biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
     } catch (_) {

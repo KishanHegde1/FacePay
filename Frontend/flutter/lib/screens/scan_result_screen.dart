@@ -57,7 +57,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   Widget build(BuildContext context) {
     final qr = widget.detection.kind == ScanDetectionKind.qr;
     final enrollment = widget.purpose == FaceScanPurpose.enrollment;
-    final recipientScan = !qr && !enrollment;
+    final recipientScan =
+        !qr && widget.purpose == FaceScanPurpose.recipientIdentification;
+    final livenessScan = !qr && widget.purpose == FaceScanPurpose.scan;
     final raw = widget.detection.rawValue ?? '';
     final preview = raw.length > 2048 ? '${raw.substring(0, 2048)}…' : raw;
     return Scaffold(
@@ -94,7 +96,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                           : _saved
                           ? 'Face registration complete'
                           : recipientScan
-                          ? 'Live face detected'
+                          ? 'Face detected'
                           : 'Two blinks detected',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
@@ -116,7 +118,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                             ? 'This device is registered.'
                             : enrollment
                             ? 'Ready to register FacePay on this device.'
-                            : 'Recipient matching is not connected yet.',
+                            : recipientScan
+                            ? 'Recipient matching is not connected yet.'
+                            : 'Face liveness check complete.',
                         style: TextStyle(fontWeight: FontWeight.w800),
                       ),
                       SizedBox(height: 12),
@@ -124,13 +128,15 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                         _saved
                             ? 'The protected enrollment record was saved in your FacePay account. A different app installation must register again.'
                             : recipientScan
-                            ? 'The live face check worked. Identifying the recipient requires an approved encrypted face-template service and that person’s consented FacePay enrollment.'
+                            ? 'One stable face was detected without a blink challenge. Identifying the recipient requires an approved encrypted face-template service and that person’s consented FacePay enrollment.'
                             : 'The scan found one face, completed two blinks, and did not detect a phone, tablet, or display in the camera view.',
                       ),
                       SizedBox(height: 12),
                       Text(
                         recipientScan
                             ? 'After integration, this screen will return a verified recipient name and payment address. The payer will then choose their own linked account, enter an amount, review, and authorize with UPI PIN.'
+                            : livenessScan
+                            ? 'No face image or ML Kit landmark data is saved. Recipient matching still requires a certified encrypted face-template provider.'
                             : 'No face image or ML Kit landmark data is saved. A certified encrypted face-template provider is still required before real face payments.',
                         style: TextStyle(color: AppPalette.of(context).muted),
                       ),

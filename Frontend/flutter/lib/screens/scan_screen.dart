@@ -43,7 +43,12 @@ class _ScanScreenState extends State<ScanScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _session = widget.session ?? MlKitScannerSession();
+    _session =
+        widget.session ??
+        MlKitScannerSession(
+          requireFaceLiveness:
+              widget.purpose != FaceScanPurpose.recipientIdentification,
+        );
     _session.addListener(_changed);
     unawaited(_session.start());
   }

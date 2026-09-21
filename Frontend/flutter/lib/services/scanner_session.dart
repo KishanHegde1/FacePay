@@ -28,9 +28,13 @@ abstract class ScannerSession extends ChangeNotifier {
 
 /// Owns exactly one camera. Frames are transient and never uploaded or saved.
 class MlKitScannerSession extends ScannerSession {
-  MlKitScannerSession({DateTime Function()? now})
-    : _gate = ScanDetectionGate(now: now),
-      _blinks = BlinkChallenge(now: now);
+  MlKitScannerSession({
+    DateTime Function()? now,
+    this.requireFaceLiveness = true,
+  }) : _gate = ScanDetectionGate(now: now),
+       _blinks = BlinkChallenge(now: now);
+
+  final bool requireFaceLiveness;
 
   CameraController? _camera;
   BarcodeScanner? _qr;
@@ -232,6 +236,27 @@ class MlKitScannerSession extends ScannerSession {
           trackingId: faces.length == 1 ? faces.single.trackingId : null,
         );
         if (found != null) {
+          if (!requireFaceLiveness) {
+            // Recipient discovery needs a stable single face, but the explicit
+            // two-blink challenge belongs to the main Scan and enrollment
+            // flows. Check the same transient frame for a possible screen
+            // before returning the unverified face detection.
+            _imageLabeler = ImageLabeler(
+              options: ImageLabelerOptions(confidenceThreshold: .86),
+            );
+            final labels = await _imageLabeler!.processImage(input);
+            if (!_current(generation)) return;
+            if (containsPossibleDeviceOrScreen(
+              labels.map((label) => label.label),
+            )) {
+              _fail(
+                'A phone, tablet, or display may be in view. Scan the person directly, not a screen.',
+              );
+              return;
+            }
+            _detected(found);
+            return;
+          }
           // Classification is enabled only after initial face detection. This
           // is an interaction challenge, never face recognition/matching.
           await _faces!.close();

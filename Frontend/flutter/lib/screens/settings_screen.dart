@@ -153,13 +153,11 @@ class _AppLockSettingState extends State<_AppLockSetting> {
     if (_checking || widget.settings.saving) return;
     setState(() => _checking = true);
     try {
-      if (enabled && !await _service.hasEnrolledBiometrics()) {
+      if (enabled && !await _service.isDeviceAuthenticationAvailable()) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'Add a fingerprint or face in your phone lock settings first.',
-              ),
+              content: Text('Set a phone screen lock first, then try again.'),
             ),
           );
         }
@@ -196,12 +194,12 @@ class _AppLockSettingState extends State<_AppLockSetting> {
         SwitchListTile(
           key: const ValueKey('app-lock-switch'),
           contentPadding: EdgeInsets.zero,
-          secondary: const Icon(Icons.fingerprint_rounded),
-          title: const Text('Fingerprint or device face'),
+          secondary: const Icon(Icons.phonelink_lock_rounded),
+          title: const Text('Use phone screen lock'),
           subtitle: Text(
             widget.settings.appLockEnabled
                 ? 'App lock is on'
-                : 'Use biometrics already registered on this phone',
+                : 'Fingerprint, face, PIN, pattern, or phone password',
           ),
           value: widget.settings.appLockEnabled,
           onChanged: _checking || widget.settings.saving ? null : _changed,

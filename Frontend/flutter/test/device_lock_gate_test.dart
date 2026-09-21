@@ -18,7 +18,7 @@ class FakeDeviceLockService implements DeviceLockService {
   Future<void> cancel() async {}
 
   @override
-  Future<bool> hasEnrolledBiometrics() async => true;
+  Future<bool> isDeviceAuthenticationAvailable() async => true;
 }
 
 void main() {
@@ -71,5 +71,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(service.requests, 0);
     expect(find.text('Sign in'), findsOneWidget);
+  });
+
+  testWidgets('enabling app lock in settings does not lock immediately', (
+    tester,
+  ) async {
+    final service = FakeDeviceLockService();
+    var enabled = false;
+    late StateSetter update;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return DeviceLockGate(
+              active: true,
+              enabled: enabled,
+              service: service,
+              onUseAnotherAccount: () async {},
+              child: const Scaffold(body: Text('Private account screen')),
+            );
+          },
+        ),
+      ),
+    );
+    update(() => enabled = true);
+    await tester.pumpAndSettle();
+    expect(service.requests, 0);
+    expect(find.text('Private account screen'), findsOneWidget);
+    expect(find.text('FacePay is locked'), findsNothing);
   });
 }
