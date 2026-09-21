@@ -17,6 +17,7 @@ import 'package:face_payment/screens/receive_screen.dart';
 import 'package:face_payment/screens/scan_screen.dart';
 import 'package:face_payment/screens/bank_link_screen.dart';
 import 'package:face_payment/services/auth_api.dart';
+import 'package:face_payment/services/payment_feedback_service.dart';
 import 'package:face_payment/services/session_store.dart';
 import 'package:face_payment/services/scanner_session.dart';
 import 'package:face_payment/services/scan_detection.dart';
@@ -71,6 +72,21 @@ class PaymentScannerSession extends LayoutScannerSession {
     detection = value;
     status = ScannerStatus.detected;
     notifyListeners();
+  }
+}
+
+class FakePaymentFeedbackService implements PaymentFeedbackService {
+  int speaks = 0;
+  int stops = 0;
+
+  @override
+  Future<void> speakThanks() async {
+    speaks += 1;
+  }
+
+  @override
+  Future<void> stop() async {
+    stops += 1;
   }
 }
 
@@ -533,8 +549,15 @@ void main() {
     state.linkDemoBank(name: 'HDFC Bank', monogram: 'HDFC');
     state.setFaceRegistered(true);
     final scanner = PaymentScannerSession();
+    final feedback = FakePaymentFeedbackService();
     await tester.pumpWidget(
-      host(PaymentScreen(state: state, scannerSessionFactory: () => scanner)),
+      host(
+        PaymentScreen(
+          state: state,
+          scannerSessionFactory: () => scanner,
+          feedbackService: feedback,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -562,13 +585,29 @@ void main() {
       findsOneWidget,
     );
     expect(state.transactions, isEmpty);
-    await tapVisible(tester, find.text('Approve demo payment'));
-    expect(find.text('Demo payment recorded'), findsWidgets);
+    await tester.ensureVisible(find.text('Approve demo payment'));
+    await tester.tap(find.text('Approve demo payment'));
+    await tester.pump();
+    for (
+      var frame = 0;
+      frame < 20 && find.text('Demo payment completed').evaluate().isEmpty;
+      frame += 1
+    ) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Demo payment completed'), findsOneWidget);
+    expect(find.text('Thanks, bro.'), findsOneWidget);
+    expect(feedback.speaks, 1);
     expect(state.balance, 0);
     expect(state.transactions, hasLength(1));
     expect(state.transactions.single.title, 'My test recipient');
     expect(state.transactions.single.amount, 500);
     expect(state.transactions.single.isDemo, isTrue);
+    await tester.pump(const Duration(milliseconds: 4400));
+    expect(find.text('Demo payment completed'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Demo payment recorded'), findsOneWidget);
+    expect(feedback.speaks, 1);
     expect(tester.takeException(), isNull);
   });
 

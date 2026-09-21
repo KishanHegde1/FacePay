@@ -12,6 +12,7 @@
 - Image-label checks for phones, tablets and displays during the blink challenge.
 - Home > FACE VERIFICATION > Register Face saves account enrollment metadata through Rust into Neon.
 - Demo payment: enter recipient and amount, review, complete the camera check, explicitly approve, then show local demo activity and a receipt. No money moves.
+- Demo completion: show a 4.5-second confirmation, speak "Thanks, bro." with the device voice engine, then display the local receipt.
 
 - Friendly server-connection startup screen and bounded automatic session-restore retries while the hosted server responds; saved login remains intact on temporary failures.
 - Settings from the home header and Profile, with saved System/Light/Dark appearance across app routes.
@@ -42,6 +43,11 @@ The supplied UPI PDF has been reviewed. Offline Rust account-discovery contracts
 Opt-in recipient identity matching; evaluated face-template/liveness provider; server-verified device binding; stronger enrollment, recovery and deletion controls; sponsor-bank sandbox; real bank linking, authorization and balance retrieval; durable payment processing, reconciliation, support and security review; release signing.
 
 The current demo uses a manually entered recipient name. The requested scan-recipient-face-to-find-their-account flow is not yet implemented.
+
+The backend supports separate user-owned profile/session records, but FacePay
+does not yet support real concurrent payments. See the
+[full application review](docs/FULL_APP_REVIEW_2026-09-21.md) for database,
+scalability and production-readiness findings.
 
 ## Run and verify
 

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/app_state.dart';
 import '../services/face_scan_purpose.dart';
+import '../services/payment_feedback_service.dart';
 import '../services/scanner_session.dart';
 import '../ui/design.dart';
 import 'scan_screen.dart';
@@ -15,6 +18,7 @@ class PaymentScreen extends StatefulWidget {
     this.onComplete,
     this.onLinkBank,
     this.scannerSessionFactory,
+    this.feedbackService,
   });
 
   final AppState state;
@@ -23,6 +27,7 @@ class PaymentScreen extends StatefulWidget {
 
   /// Creates a fresh scanner for each approval attempt in device-free tests.
   final ScannerSession Function()? scannerSessionFactory;
+  final PaymentFeedbackService? feedbackService;
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
@@ -34,15 +39,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final _recipientController = TextEditingController();
   final _amountController = TextEditingController();
   PaymentTransaction? _recordedPayment;
+  late final PaymentFeedbackService _feedbackService;
+  Timer? _confirmationTimer;
+  bool _showingConfirmation = false;
+  bool _paymentCommitted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _feedbackService = widget.feedbackService ?? DevicePaymentFeedbackService();
+  }
 
   @override
   void dispose() {
+    _confirmationTimer?.cancel();
+    unawaited(_feedbackService.stop());
     _recipientController.dispose();
     _amountController.dispose();
     super.dispose();
   }
 
   void _leave() {
+    _confirmationTimer?.cancel();
+    unawaited(_feedbackService.stop());
     if (widget.onComplete != null) {
       widget.onComplete!();
     } else {
@@ -94,24 +113,42 @@ class _PaymentScreenState extends State<PaymentScreen> {
           purpose: FaceScanPurpose.demoPaymentApproval,
           closeAfterFaceVerified: true,
           onFaceVerified: () async {
+            if (_paymentCommitted) return;
+            _paymentCommitted = true;
             widget.state.recordDemoPayment(
               recipient: _recipientController.text,
               amount: amount,
             );
             if (mounted) {
-              setState(
-                () => _recordedPayment = widget.state.transactions.first,
-              );
+              setState(() {
+                _recordedPayment = widget.state.transactions.first;
+                _showingConfirmation = true;
+              });
             }
           },
         ),
       ),
     );
+    // Start only after both camera/result routes have closed, so the user gets
+    // the complete 4.5 seconds of visible confirmation.
+    if (mounted &&
+        _recordedPayment != null &&
+        _showingConfirmation &&
+        _confirmationTimer == null) {
+      unawaited(_feedbackService.speakThanks());
+      _confirmationTimer = Timer(const Duration(milliseconds: 4500), () {
+        if (mounted) setState(() => _showingConfirmation = false);
+      });
+    }
   }
 
   void _startAnother() {
+    _confirmationTimer?.cancel();
+    unawaited(_feedbackService.stop());
     setState(() {
       _recordedPayment = null;
+      _showingConfirmation = false;
+      _paymentCommitted = false;
       _recipientController.clear();
       _amountController.clear();
     });
@@ -127,6 +164,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
             constraints: const BoxConstraints(maxWidth: 600),
             child: _recordedPayment == null
                 ? _entry()
+                : _showingConfirmation
+                ? _completionConfirmation()
                 : _success(_recordedPayment!),
           ),
         ),
@@ -332,6 +371,69 @@ class _PaymentScreenState extends State<PaymentScreen> {
         SizedBox(height: 12),
         TextButton(onPressed: _leave, child: Text('Back to home')),
       ],
+    );
+  }
+
+  Widget _completionConfirmation() {
+    return Semantics(
+      liveRegion: true,
+      label: 'Demo payment completed. No money moved.',
+      child: Padding(
+        key: const ValueKey('demo-payment-completion'),
+        padding: const EdgeInsets.fromLTRB(28, 72, 28, 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 108,
+              height: 108,
+              decoration: BoxDecoration(
+                color: AppPalette.of(context).mint,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.check_rounded,
+                size: 58,
+                color: AppPalette.of(context).dark
+                    ? const Color(0xFF88DAB9)
+                    : const Color(0xFF21806C),
+              ),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              'Demo payment completed',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppPalette.of(context).ink,
+                fontSize: 29,
+                height: 1.15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Thanks, bro.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppPalette.of(context).primary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No money moved. Your local demo receipt will appear shortly.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppPalette.of(context).muted,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -315,6 +315,9 @@ struct AppState {
     config: Config,
     store: Arc<Mutex<Store>>,
     pool: PgPool,
+    // Reuse one connection pool for Firebase instead of creating a new client
+    // and TLS connection pool for every sign-in request.
+    firebase_http: reqwest::Client,
     hdfc: hdfc::HdfcClient,
 }
 
@@ -543,6 +546,7 @@ fn router(config: Config, pool: PgPool) -> Router {
         config,
         store: Arc::new(Mutex::new(Store::default())),
         pool,
+        firebase_http: reqwest::Client::new(),
         hdfc,
     };
     Router::new()
@@ -665,7 +669,8 @@ async fn verify_firebase(
         .ok_or_else(ApiError::firebase_unavailable)?;
     // Firebase validates the ID token over HTTPS and returns only the account
     // associated with that token for this Firebase project's API key.
-    let response = reqwest::Client::new()
+    let response = state
+        .firebase_http
         .post("https://identitytoolkit.googleapis.com/v1/accounts:lookup")
         .query(&[("key", api_key)])
         .json(&serde_json::json!({ "idToken": input.id_token }))
