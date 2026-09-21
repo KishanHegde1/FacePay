@@ -1,5 +1,4 @@
 import 'package:face_payment/services/device_lock_service.dart';
-import 'package:face_payment/ui/design.dart';
 import 'package:face_payment/ui/device_lock_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,34 +21,38 @@ class FakeDeviceLockService implements DeviceLockService {
 }
 
 void main() {
-  testWidgets('enabled app lock hides account until device authentication', (
+  testWidgets('enabled app lock keeps account hidden behind a blank screen', (
     tester,
   ) async {
     final service = FakeDeviceLockService();
     await tester.pumpWidget(
       MaterialApp(
-        theme: AppTheme.light,
         home: DeviceLockGate(
           active: true,
           enabled: true,
           service: service,
-          onUseAnotherAccount: () async {},
           child: const Scaffold(body: Text('Private account screen')),
         ),
       ),
     );
     await tester.pumpAndSettle();
     expect(service.requests, 1);
-    expect(find.text('FacePay is locked'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('device-lock-blank-screen')),
+      findsOneWidget,
+    );
     expect(find.text('Private account screen'), findsNothing);
+    expect(find.byType(Text), findsNothing);
 
     service.unlocked = true;
-    await tester.ensureVisible(find.text('Unlock FacePay'));
-    await tester.tap(find.text('Unlock FacePay'));
+    await tester.tap(find.byKey(const ValueKey('device-lock-blank-screen')));
     await tester.pumpAndSettle();
     expect(service.requests, 2);
     expect(find.text('Private account screen'), findsOneWidget);
-    expect(find.text('FacePay is locked'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('device-lock-blank-screen')),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -63,7 +66,6 @@ void main() {
           active: false,
           enabled: true,
           service: service,
-          onUseAnotherAccount: () async {},
           child: const Scaffold(body: Text('Sign in')),
         ),
       ),
@@ -88,7 +90,6 @@ void main() {
               active: true,
               enabled: enabled,
               service: service,
-              onUseAnotherAccount: () async {},
               child: const Scaffold(body: Text('Private account screen')),
             );
           },
@@ -99,6 +100,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(service.requests, 0);
     expect(find.text('Private account screen'), findsOneWidget);
-    expect(find.text('FacePay is locked'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('device-lock-blank-screen')),
+      findsNothing,
+    );
   });
 }

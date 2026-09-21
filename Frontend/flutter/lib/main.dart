@@ -267,7 +267,6 @@ class _FacePaymentAppState extends State<FacePaymentApp> {
             active: _session != null,
             enabled: _settings.appLockEnabled,
             service: _deviceLockService,
-            onUseAnotherAccount: _useAnotherAccount,
             child: child ?? const SizedBox.shrink(),
           );
         },
